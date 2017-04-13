@@ -29,21 +29,12 @@
 
 import os
 import re
-import csv
-import json
 import numpy as np
-import copy
 from .intf_const import ARDUINO
-from .intf_const import MAILBOX_OFFSET
-from .intf_const import MAILBOX_PY2DIF_CMD_OFFSET
 from .intf_const import INPUT_SAMPLE_SIZE
-from .intf_const import OUTPUT_SAMPLE_SIZE
 from .intf_const import INPUT_PIN_MAP
 from .intf_const import OUTPUT_PIN_MAP
 from .intf_const import TRI_STATE_MAP
-from .intf_const import MAILBOX_PY2DIF_CMD_OFFSET
-from .intf import request_intf
-from .waveform import Waveform
 
 
 __author__ = "Yun Rock Qu"
