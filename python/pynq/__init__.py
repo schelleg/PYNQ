@@ -27,19 +27,20 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__author__ = "Yun Rock Qu"
-__copyright__ = "Copyright 2016, Xilinx"
-__email__ = "pynq_support@xilinx.com"
-
-
 from . import general_const
 from .gpio import GPIO
 from .mmio import MMIO
 from .pl import PL
 from .pl import Bitstream
 from .pl import Overlay
+from .ps import Register
 from .ps import Clocks
 from .interrupt import Interrupt
 from .xlnk import Xlnk
+
+
+__author__ = "Yun Rock Qu"
+__copyright__ = "Copyright 2016, Xilinx"
+__email__ = "pynq_support@xilinx.com"
 
 __all__ = ['tests', 'board', 'iop', 'intf', 'drivers']
