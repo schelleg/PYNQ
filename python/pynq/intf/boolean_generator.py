@@ -29,13 +29,18 @@
 
 import os
 import re
+import numpy as np
 from pyeda.inter import exprvar
 from pyeda.inter import expr2truthtable
 from .intf_const import ARDUINO
 from .intf_const import CMD_GENERATE_DEFAULT_BOOLEAN
 from .intf_const import CMD_GENERATE_USER_BOOLEAN
+from .intf_const import CMD_TRACE_FSM_ONLY
+from .intf_const import OUTPUT_PIN_MAP
+from .intf_const import INPUT_PIN_MAP
 from .intf import request_intf
-
+from .pattern_analyzer import PatternAnalyzer
+from .waveform import Waveform
 
 __author__ = "Yun Rock Qu"
 __copyright__ = "Copyright 2017, Xilinx"
@@ -75,7 +80,7 @@ class BooleanGenerator:
 
     """
 
-    def __init__(self, if_id, expr=None, led=True, verbose=True):
+    def __init__(self, if_id, expr=None, led=True, verbose=False):
         """Return a new Arduino_CFG object.
 
         For ARDUINO, the available input pins are data pins (D0-D13, A0-A5),
@@ -130,14 +135,17 @@ class BooleanGenerator:
         self.intf = request_intf(if_id, ARDUINO_CFG_PROGRAM)
         self.expr = expr
         self.led = led
+        self.waveform = None
         self.verbose = verbose
+        self.analyzer = PatternAnalyzer(if_id)
+        self.bank_ix = None
 
         if expr is None:
             self.intf.write_command(CMD_GENERATE_DEFAULT_BOOLEAN)
         else:
             self.bool_func(expr, led, verbose)
 
-    def bool_func(self, expr, led=True, verbose=True):
+    def bool_func(self, expr, led=True):
         """Configure the CFG with new boolean expression or LED indicator.
 
         Implements boolean function at specified IO pins with optional led
@@ -149,8 +157,6 @@ class BooleanGenerator:
             The new boolean expression.
         led : bool
             Show boolean function output on onboard LED, defaults to true
-        verbose : bool
-            Whether to show verbose message to users.
 
         Returns
         -------
@@ -162,7 +168,6 @@ class BooleanGenerator:
 
         self.expr = expr
         self.led = led
-        self.verbose = verbose
 
         # parse boolean expression
         bank_out = None
@@ -219,7 +224,7 @@ class BooleanGenerator:
                 expr_p = expr_p.replace('PB' + str(i), 'p' + str(i))
 
         truth_table = expr2truthtable(eval(expr_p))
-        if verbose:
+        if self.verbose:
             if led:
                 print("Logic output mapped to {}".format(LD_PINS[bank_in]))
             if bank_in < 4:
@@ -241,3 +246,48 @@ class BooleanGenerator:
 
         self.intf.write_control([truth_num])
         self.intf.write_command(cmd_word)
+
+        self.bank_ix = bank_in
+
+    def display(self):
+        """Display the boolean logic generation in a Jupyter notebook.
+
+        A wavedrom waveform is shown with all inputs and outputs displayed.
+
+        """
+        # setup waveform view - stimulus from input wires, response on output wires
+        waveform_dict = {'signal': [
+            ['stimulus'],
+            ['response']],
+            'foot': {'tick': 1},
+            'head': {'tick': 1, 'text': f'Boolean Logic Generator ({self.expr})'}}
+
+        # append four inputs and one output to waveform view (name and label are identical here)
+        for name in IN_PINS[self.bank_ix]:
+            waveform_dict['signal'][0].append({'name': name, 'pin': name})
+
+        for name in [OUT_PINS[self.bank_ix]]:
+            waveform_dict['signal'][1].append({'name': name, 'pin': name})
+
+        display_waveform = Waveform(waveform_dict, stimulus_name='stimulus',analysis_name='response')
+
+        # Capture 32 cycles on CFGLUT
+        trace_num_samples = 16
+        trace_data_addr = self.intf.allocate_buffer('trace_data_buf',
+                                                    trace_num_samples,
+                                                    data_type='unsigned' +
+                                                              ' long long')
+
+        # need to pass trace_data_addr to "trace only" command
+        self.intf.write_control([trace_data_addr, trace_num_samples])
+        self.intf.write_command(CMD_TRACE_FSM_ONLY)
+
+        data_samples = self.intf.ndarray_from_buffer(
+            'trace_data_buf', trace_num_samples * 8, dtype=np.uint64)
+        analysis_group = self.analyzer.analyze(data_samples)
+
+        display_waveform.update('stimulus', analysis_group)
+        display_waveform.update('response', analysis_group)
+        display_waveform.display()
+
+        self.intf.free_buffer('trace_data_buf')
