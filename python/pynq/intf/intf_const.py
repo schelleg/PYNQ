@@ -44,10 +44,6 @@ MAILBOX_PY2DIF_CMD_OFFSET = 0xFFC
 MAILBOX_PY2DIF_ADDR_OFFSET = 0xFF8
 MAILBOX_PY2DIF_DATA_OFFSET = 0xF00
 
-PMODA = 1
-PMODB = 2
-ARDUINO = 3
-
 # Microblaze commands
 CMD_GENERATE_DEFAULT_BOOLEAN = 0x001
 CMD_GENERATE_USER_BOOLEAN = 0x003
@@ -56,91 +52,106 @@ CMD_GENERATE_FSM_START = 0x009
 CMD_GENERATE_FSM_STOP = 0x00B
 CMD_TRACE_FSM_ONLY = 0x00D
 
-# Pattern generator constants
-PATTERN_FREQUENCY_MHZ = 10
-INPUT_SAMPLE_SIZE = 64
-OUTPUT_SAMPLE_SIZE = 32
-OUTPUT_PIN_MAP = {'D0': 0,
-                  'D1': 1,
-                  'D2': 2,
-                  'D3': 3,
-                  'D4': 4,
-                  'D5': 5,
-                  'D6': 6,
-                  'D7': 7,
-                  'D8': 8,
-                  'D9': 9,
-                  'D10': 10,
-                  'D11': 11,
-                  'D12': 12,
-                  'D13': 13,
-                  'D14': 14,
-                  'D15': 15,
-                  'D16': 16,
-                  'D17': 17,
-                  'D18': 18,
-                  'D19': 19,
-                  'A0': 14,
-                  'A1': 15,
-                  'A2': 16,
-                  'A3': 17,
-                  'A4': 18,
-                  'A5': 19,
-                  }
-INPUT_PIN_MAP = {'D0': 20,
-                 'D1': 21,
-                 'D2': 22,
-                 'D3': 23,
-                 'D4': 24,
-                 'D5': 25,
-                 'D6': 26,
-                 'D7': 27,
-                 'D8': 28,
-                 'D9': 29,
-                 'D10': 30,
-                 'D11': 31,
-                 'D12': 32,
-                 'D13': 33,
-                 'D14': 34,
-                 'D15': 35,
-                 'D16': 36,
-                 'D17': 37,
-                 'D18': 38,
-                 'D19': 39,
-                 'A0': 34,
-                 'A1': 35,
-                 'A2': 36,
-                 'A3': 37,
-                 'A4': 38,
-                 'A5': 39,
-                 }
-TRI_STATE_MAP = {'D0': 42,
-                 'D1': 43,
-                 'D2': 44,
-                 'D3': 45,
-                 'D4': 46,
-                 'D5': 47,
-                 'D6': 48,
-                 'D7': 49,
-                 'D8': 50,
-                 'D9': 51,
-                 'D10': 52,
-                 'D11': 53,
-                 'D12': 54,
-                 'D13': 55,
-                 'D14': 56,
-                 'D15': 57,
-                 'D16': 58,
-                 'D17': 59,
-                 'D18': 60,
-                 'D19': 61,
-                 'A0': 56,
-                 'A1': 57,
-                 'A2': 58,
-                 'A3': 59,
-                 'A4': 60,
-                 'A5': 61,
-                 }
+CMD_INTF_SWITCH_CONFIG = 0x1
+CMD_CONFIG_CFG = 0x2
+CMD_CONFIG_PG = 0x3
+CMD_CONFIG_SMG = 0x4
+CMD_CONFIG_TRACE = 0x5
+CMD_ARM_CFG = 0x6
+CMD_ARM_PG = 0x7
+CMD_ARM_SMG = 0x8
+CMD_ARM_TRACE = 0x9
+CMD_RUN = 0xD
+CMD_STOP = 0xE
+CMD_RUN_STATUS = 0xF
+
+INTF_MICROBLAZE_BIN = "arduino_intf.bin"
+
+
+PYNQZ1_DIO_SPECIFICATION = {'clock_mhz': 10, 'interface_width': 32,
+                            'monitor_width': 64,
+                            'output_pin_map': {'D0': 0,
+                                               'D1': 1,
+                                               'D2': 2,
+                                               'D3': 3,
+                                               'D4': 4,
+                                               'D5': 5,
+                                               'D6': 6,
+                                               'D7': 7,
+                                               'D8': 8,
+                                               'D9': 9,
+                                               'D10': 10,
+                                               'D11': 11,
+                                               'D12': 12,
+                                               'D13': 13,
+                                               'D14': 14,
+                                               'D15': 15,
+                                               'D16': 16,
+                                               'D17': 17,
+                                               'D18': 18,
+                                               'D19': 19,
+                                               'A0': 14,
+                                               'A1': 15,
+                                               'A2': 16,
+                                               'A3': 17,
+                                               'A4': 18,
+                                               'A5': 19,
+                                               },
+                            'input_pin_map': {'D0': 20,
+                                              'D1': 21,
+                                              'D2': 22,
+                                              'D3': 23,
+                                              'D4': 24,
+                                              'D5': 25,
+                                              'D6': 26,
+                                              'D7': 27,
+                                              'D8': 28,
+                                              'D9': 29,
+                                              'D10': 30,
+                                              'D11': 31,
+                                              'D12': 32,
+                                              'D13': 33,
+                                              'D14': 34,
+                                              'D15': 35,
+                                              'D16': 36,
+                                              'D17': 37,
+                                              'D18': 38,
+                                              'D19': 39,
+                                              'A0': 34,
+                                              'A1': 35,
+                                              'A2': 36,
+                                              'A3': 37,
+                                              'A4': 38,
+                                              'A5': 39,
+                                              },
+                            'tri_state_map' : {'D0': 42,
+                                               'D1': 43,
+                                               'D2': 44,
+                                               'D3': 45,
+                                               'D4': 46,
+                                               'D5': 47,
+                                               'D6': 48,
+                                               'D7': 49,
+                                               'D8': 50,
+                                               'D9': 51,
+                                               'D10': 52,
+                                               'D11': 53,
+                                               'D12': 54,
+                                               'D13': 55,
+                                               'D14': 56,
+                                               'D15': 57,
+                                               'D16': 58,
+                                               'D17': 59,
+                                               'D18': 60,
+                                               'D19': 61,
+                                               'A0': 56,
+                                               'A1': 57,
+                                               'A2': 58,
+                                               'A3': 59,
+                                               'A4': 60,
+                                               'A5': 61,
+                                               }
+}
 
 # FSM generator constants
 FSM_BRAM_ADDR_WIDTH = 13

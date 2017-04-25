@@ -30,19 +30,12 @@
 import os
 import re
 import numpy as np
-from .intf_const import ARDUINO
-from .intf_const import INPUT_SAMPLE_SIZE
-from .intf_const import INPUT_PIN_MAP
-from .intf_const import OUTPUT_PIN_MAP
-from .intf_const import TRI_STATE_MAP
-
+from .intf_const import INTF_MICROBLAZE_BIN
+from .intf import request_intf
 
 __author__ = "Yun Rock Qu"
 __copyright__ = "Copyright 2017, Xilinx"
 __email__ = "pynq_support@xilinx.com"
-
-
-ARDUINO_PG_PROGRAM = "arduino_intf.bin"
 
 
 def _bitstring_to_wave(bitstring):
@@ -68,8 +61,8 @@ def _bitstring_to_wave(bitstring):
     return re.sub(bit_regex, insert_dots, bitstring)
 
 
-class PatternAnalyzer:
-    """Class for the Pattern Analyzer.
+class TraceAnalyzer:
+    """Class for the Trace Analyzer.
 
     This class can capture digital IO patterns / stimulus on all the pins.
     When a pin is specified as input, the response can be captured.
@@ -81,25 +74,39 @@ class PatternAnalyzer:
 
     """
 
-    def __init__(self, if_id):
+    def __init__(self, if_id, num_samples=4096, trace_spec=None):
         """Return a new Arduino_PG object.
 
         Parameters
         ----------
         if_id : int
             The interface ID (ARDUINO).
-        dst_samples: numpy.ndarray
-            The numpy array storing the response, each sample being 64 bits.
 
         """
-        if os.geteuid() != 0:
-            raise EnvironmentError('Root permissions required.')
-        if if_id not in [ARDUINO]:
-            raise ValueError("No such INTF for Arduino interface.")
+        self.intf = request_intf(if_id, INTF_MICROBLAZE_BIN)
+        self.trace_spec = trace_spec
+        self.num_samples = num_samples
 
-        self.if_id = if_id
+    def config(self):
 
-    def analyze(self, samples):
+        # Get width in bytes and send to allocator held with intf Microblaze
+        trace_width = round(self.trace_spec['monitor_width']/8)
+        buffer_phy_addr = self.intf.allocate_buffer('trace_buf', self.num_samples,
+                                             data_type=f"i{trace_width}")
+
+        self.intf.write_control([buffer_phy_addr])
+        self.intf.write_command(CMD_CONFIG_TRACE)
+
+    def arm(self):
+        self.intf.write_command(CMD_ARM_TRACE)
+
+    def run(self):
+        self.intf.write_command(CMD_RUN)
+
+    def stop(self):
+        self.intf.write_command(CMD_STOP)
+
+    def analyze(self, trace_spec=None):
         """Analyze the captured pattern.
 
         This function will process the captured pattern and put the pattern
@@ -127,18 +134,30 @@ class PatternAnalyzer:
             and the waveform pattern in string format.
 
         """
+
+        if trace_spec is not None:
+            self.trace_spec = trace_spec
+
+        if self.trace_spec is None:
+            raise TypeError("Cannot Use Trace Analyzer without a valid trace_spec.")
+
+
+        trace_width = round(self.trace_spec['monitor_width'] / 8)
+        samples = self.intf.ndarray_from_buffer(
+            'trace_buf', self.num_samples * trace_width, dtype=f'i{trace_width}')
+
         num_samples = len(samples)
         temp_samples = np.zeros(num_samples, dtype='>i8')
         np.copyto(temp_samples, samples)
         temp_bytes = np.frombuffer(temp_samples, dtype=np.uint8)
         bit_array = np.unpackbits(temp_bytes)
         temp_lanes = bit_array.reshape(num_samples,
-                                       INPUT_SAMPLE_SIZE).T[::-1]
+                                       self.trace_spec['monitor_width']).T[::-1]
         wavelanes = list()
-        for pin_label in INPUT_PIN_MAP:
-            output_lane = temp_lanes[OUTPUT_PIN_MAP[pin_label]]
-            input_lane = temp_lanes[INPUT_PIN_MAP[pin_label]]
-            tri_lane = temp_lanes[TRI_STATE_MAP[pin_label]]
+        for pin_label in trace_spec['input_pin_map']:
+            output_lane = temp_lanes[trace_spec['output_pin_map'][pin_label]]
+            input_lane = temp_lanes[trace_spec['input_pin_map'][pin_label]]
+            tri_lane = temp_lanes[trace_spec['tri_pin_map'][pin_label]]
             cond_list = [tri_lane == 0, tri_lane == 1]
             choice_list = [output_lane, input_lane]
             temp_lane = np.select(cond_list, choice_list)
