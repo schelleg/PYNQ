@@ -32,14 +32,10 @@ import re
 import numpy as np
 from pyeda.inter import exprvar
 from pyeda.inter import expr2truthtable
-from .intf_const import ARDUINO
-from .intf_const import CMD_GENERATE_DEFAULT_BOOLEAN
 from .intf_const import CMD_GENERATE_USER_BOOLEAN
 from .intf_const import CMD_TRACE_FSM_ONLY
-from .intf_const import OUTPUT_PIN_MAP
-from .intf_const import INPUT_PIN_MAP
 from .intf import request_intf
-from .pattern_analyzer import PatternAnalyzer
+from .trace_analyzer import TraceAnalyzer
 from .waveform import Waveform
 
 __author__ = "Yun Rock Qu"
@@ -80,7 +76,7 @@ class BooleanGenerator:
 
     """
 
-    def __init__(self, if_id, expr=None, led=True, verbose=False):
+    def __init__(self, if_id, expr=None, led=True, verbose=False, trace_spec=None):
         """Return a new Arduino_CFG object.
 
         For ARDUINO, the available input pins are data pins (D0-D13, A0-A5),
@@ -126,26 +122,27 @@ class BooleanGenerator:
             Whether to show verbose message to users.
 
         """
-        if os.geteuid() != 0:
-            raise EnvironmentError('Root permissions required.')
-        if if_id not in [ARDUINO]:
-            raise ValueError("No such INTF for Arduino interface.")
 
-        self.if_id = if_id
         self.intf = request_intf(if_id, ARDUINO_CFG_PROGRAM)
         self.expr = expr
-        self.led = led
+        #self.led = led
         self.waveform = None
         self.verbose = verbose
         self.analyzer = PatternAnalyzer(if_id)
-        self.bank_ix = None
+        #self.bank_ix = None
 
-        if expr is None:
-            self.intf.write_command(CMD_GENERATE_DEFAULT_BOOLEAN)
+        #if expr is None:
+        #    self.intf.write_command(CMD_GENERATE_DEFAULT_BOOLEAN)
+        if expr is not None:
+            self.bool_func(expr, led)
+
+        if analyzer_spec is not None:
+            self.analyzer = TraceAnalyzer(if_id, analyzer_spec)
         else:
-            self.bool_func(expr, led, verbose)
+            self.analyzer = None
 
-    def bool_func(self, expr, led=True):
+
+    def bool_func(self, expr):
         """Configure the CFG with new boolean expression or LED indicator.
 
         Implements boolean function at specified IO pins with optional led
@@ -167,7 +164,6 @@ class BooleanGenerator:
             raise TypeError("Boolean expression has to be a string.")
 
         self.expr = expr
-        self.led = led
 
         # parse boolean expression
         bank_out = None
@@ -176,8 +172,6 @@ class BooleanGenerator:
             expr_out = expr_out.strip()
             if expr_out in OUT_PINS:
                 bank_out = OUT_PINS.index(expr_out)
-            elif expr_out in LD_PINS:
-                bank_out = LD_PINS.index(expr_out)
             else:
                 raise ValueError("Invalid output pin.")
         else:
@@ -271,16 +265,11 @@ class BooleanGenerator:
 
         display_waveform = Waveform(waveform_dict, stimulus_name='stimulus',analysis_name='response')
 
-        # Capture 32 cycles on CFGLUT
-        trace_num_samples = 16
-        trace_data_addr = self.intf.allocate_buffer('trace_data_buf',
-                                                    trace_num_samples,
-                                                    data_type='unsigned' +
-                                                              ' long long')
+
 
         # need to pass trace_data_addr to "trace only" command
         self.intf.write_control([trace_data_addr, trace_num_samples])
-        self.intf.write_command(CMD_TRACE_FSM_ONLY)
+        self.intf.write_command(CMD_TRACE_CONFIG)
 
         data_samples = self.intf.ndarray_from_buffer(
             'trace_data_buf', trace_num_samples * 8, dtype=np.uint64)

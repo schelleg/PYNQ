@@ -30,9 +30,7 @@
 import os
 import json
 import IPython.core.display
-from .intf_const import INPUT_PIN_MAP
-from .intf_const import OUTPUT_PIN_MAP
-
+from .intf_const import PYNQZ1_DIO_SPECIFICATION
 
 __author__ = "Yun Rock Qu"
 __copyright__ = "Copyright 2017, Xilinx"
@@ -151,7 +149,7 @@ class Waveform:
     """
 
     def __init__(self, waveform_dict, stimulus_name=None,
-                 analysis_name=None):
+                 analysis_name=None, intf_spec=PYNQZ1_DIO_SPECIFICATION):
         """Initializer for this wrapper class.
 
         Parameters
@@ -169,11 +167,12 @@ class Waveform:
         self.waveform_dict = waveform_dict
         self.stimulus = stimulus_name
         self.analysis = analysis_name
-        if self.stimulus:
-            self._verify_lanes(stimulus_name)
 
-        if self.analysis:
-            self._verify_lanes(analysis_name)
+        if intf_spec is not None:
+            if self.stimulus is not None:
+                self._verify_lanes(stimulus_name,intf_spec)
+            if self.analysis is not None:
+                self._verify_lanes(analysis_name,intf_spec)
 
     def display(self):
         """Display the waveform using the Wavedrom package.
@@ -394,7 +393,7 @@ class Waveform:
         """
         return self._get_wavelane_waves(self.analysis)
 
-    def _verify_lanes(self, group_name):
+    def _verify_lanes(self, group_name, intf_spec):
         """Verify the pin labels, names, and tokens for all lanes in the group.
 
         Typical group names are `stimulus` and `analysis` by default.
@@ -413,9 +412,9 @@ class Waveform:
 
         """
         if group_name == self.stimulus:
-            valid_pins = OUTPUT_PIN_MAP
+            valid_pins = intf_spec['output_pin_map']
         elif group_name == self.analysis:
-            valid_pins = INPUT_PIN_MAP
+            valid_pins = intf_spec['input_pin_map']
         else:
             raise ValueError("Valid group names are {},{}.".format(
                 self.stimulus, self.analysis))
