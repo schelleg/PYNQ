@@ -37,6 +37,7 @@ from pynq import PL
 from pynq import Clocks
 from pynq import Xlnk
 from pynq.intf import intf_const
+from pynq import Register
 
 
 __author__ = "Yun Rock Qu"
@@ -95,6 +96,7 @@ class _INTF:
         self.ip_name = ip_name
         self.mb_program = intf_const.BIN_LOCATION + mb_program
         self.state = 'IDLE'
+        self.addr_base = addr_base
         self.gpio = GPIO(GPIO.get_gpio_pin(gpio_uix), "out")
         self.mmio = MMIO(addr_base, addr_range)
         self.clk = Clocks
@@ -158,6 +160,22 @@ class _INTF:
         """
         for i, j in enumerate(ctrl_parameters):
             self.mmio.write(intf_const.MAILBOX_OFFSET + 4 * i, j)
+
+    def read_results(self, num_words):
+        """This method reads results from the Microblaze.
+
+        Parameters
+        ----------
+        num_words : int
+            Number of 32b words to read from Microblaze mailbox.
+
+        Returns
+        -------
+        list
+            list of results read from mailbox
+
+        """
+        return [self.mmio.read(intf_const.MAILBOX_OFFSET + i*4) for i in range(num_words)]
 
     def write_command(self, command):
         """This method writes the commands to the Microblaze.
@@ -271,6 +289,35 @@ class _INTF:
                 self.buf_manager.cma_free(self.buffers[name])
         self.buffers = dict()
 
+    def config_ioswitch(self, ioswitch_pins, ioswitch_select_value):
+
+        print(f'entering config_ioswitch: {ioswitch_pins} {ioswitch_select_value}')
+
+
+        # read switch config
+        mailbox_addr = self.addr_base + intf_const.MAILBOX_OFFSET
+        self.write_command(intf_const.CMD_READ_INTF_SWITCH_CONFIG)
+        ioswitch_config = [Register(addr) for addr in [mailbox_addr, mailbox_addr + 4]]
+
+        # modify switch for requested entries
+        for ix in ioswitch_pins:
+            if ix < 10:
+                ioswitch_config[0][(ix * 2) + 1:ix * 2] = ioswitch_select_value
+            else:
+                ioswitch_config[1][((ix - 10) * 2) - 1:(ix - 10) * 2] = ioswitch_select_value
+
+        #
+        print(f'1. check the switch arguments in mailbox: {[hex(i) for i in self.read_results(2)]})')
+        print(f'1.                                       {[hex(i[31:0]) for i in ioswitch_config]}')
+
+        # write switch config
+        self.write_command(intf_const.CMD_INTF_SWITCH_CONFIG)
+
+        # confirm the write
+        #read pins
+        self.write_command(intf_const.CMD_READ_INTF_SWITCH_CONFIG)
+        print(f'2. check the switch config before exit: {[hex(i) for i in self.read_results(2)]})')
+        print(f'2.                                      {[hex(i[31:0]) for i in ioswitch_config]}')
 
 def request_intf(if_id, mb_program):
     """This is the interface to request an I/O Processor.

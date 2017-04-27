@@ -29,14 +29,14 @@
 
 # Constants
 from . import intf_const
-from .intf_const import ARDUINO
+from .intf_const import *
 
 # Interface modules
 from .intf import request_intf
 from .waveform import Waveform
 from .boolean_generator import BooleanGenerator
 from .pattern_generator import PatternGenerator
-from .pattern_analyzer import PatternAnalyzer
+from .trace_analyzer import TraceAnalyzer
 from .fsm_generator import FSMGenerator
 
 __author__ = "Yun Rock Qu"

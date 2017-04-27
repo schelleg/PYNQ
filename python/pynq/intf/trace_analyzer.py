@@ -30,13 +30,12 @@
 import os
 import re
 import numpy as np
-from .intf_const import INTF_MICROBLAZE_BIN
+from .intf_const import INTF_MICROBLAZE_BIN, CMD_CONFIG_TRACE, BYTE_WIDTH_TO_CTYPE, CMD_ARM_TRACE, BYTE_WIDTH_TO_NPTYPE
 from .intf import request_intf
 
 __author__ = "Yun Rock Qu"
 __copyright__ = "Copyright 2017, Xilinx"
 __email__ = "pynq_support@xilinx.com"
-
 
 def _bitstring_to_wave(bitstring):
     """Function to convert a pattern consisting of `0`, `1` into a sequence
@@ -80,7 +79,7 @@ class TraceAnalyzer:
         Parameters
         ----------
         if_id : int
-            The interface ID (ARDUINO).
+            The interface ID.
 
         """
         self.intf = request_intf(if_id, INTF_MICROBLAZE_BIN)
@@ -90,9 +89,12 @@ class TraceAnalyzer:
     def config(self):
 
         # Get width in bytes and send to allocator held with intf Microblaze
-        trace_width = round(self.trace_spec['monitor_width']/8)
+        trace_bit_width = self.trace_spec['monitor_width']
+        trace_byte_width = round(trace_bit_width / 8)
+        dt = np.dtype(f'>u{trace_byte_width}')
         buffer_phy_addr = self.intf.allocate_buffer('trace_buf', self.num_samples,
-                                             data_type=f"i{trace_width}")
+                                             data_type=BYTE_WIDTH_TO_CTYPE[trace_byte_width])
+
 
         self.intf.write_control([buffer_phy_addr])
         self.intf.write_command(CMD_CONFIG_TRACE)
@@ -141,10 +143,11 @@ class TraceAnalyzer:
         if self.trace_spec is None:
             raise TypeError("Cannot Use Trace Analyzer without a valid trace_spec.")
 
+        trace_bit_width = self.trace_spec['monitor_width']
+        trace_byte_width = round(trace_bit_width / 8)
 
-        trace_width = round(self.trace_spec['monitor_width'] / 8)
         samples = self.intf.ndarray_from_buffer(
-            'trace_buf', self.num_samples * trace_width, dtype=f'i{trace_width}')
+            'trace_buf', self.num_samples * trace_byte_width, dtype=BYTE_WIDTH_TO_NPTYPE[trace_byte_width])
 
         num_samples = len(samples)
         temp_samples = np.zeros(num_samples, dtype='>i8')
@@ -154,10 +157,10 @@ class TraceAnalyzer:
         temp_lanes = bit_array.reshape(num_samples,
                                        self.trace_spec['monitor_width']).T[::-1]
         wavelanes = list()
-        for pin_label in trace_spec['input_pin_map']:
-            output_lane = temp_lanes[trace_spec['output_pin_map'][pin_label]]
-            input_lane = temp_lanes[trace_spec['input_pin_map'][pin_label]]
-            tri_lane = temp_lanes[trace_spec['tri_pin_map'][pin_label]]
+        for pin_label in self.trace_spec['input_pin_map']:
+            output_lane = temp_lanes[self.trace_spec['output_pin_map'][pin_label]]
+            input_lane = temp_lanes[self.trace_spec['input_pin_map'][pin_label]]
+            tri_lane = temp_lanes[self.trace_spec['tri_pin_map'][pin_label]]
             cond_list = [tri_lane == 0, tri_lane == 1]
             choice_list = [output_lane, input_lane]
             temp_lane = np.select(cond_list, choice_list)
