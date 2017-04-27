@@ -686,97 +686,6 @@ CONFIG.DOUT_WIDTH {20} \
   connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins s_axi_aclk] [get_bd_pins axi_bram_ctrl_1/s_axi_aclk] [get_bd_pins ila_0/clk] [get_bd_pins pg/s_axi_aclk]
   connect_bd_net -net slice_pg_data_Dout [get_bd_pins Dout] [get_bd_pins slice_pg_data/Dout]
 
-  # Perform GUI Layout
-  regenerate_bd_layout -hierarchy [get_bd_cells /iop3/pg_o] -layout_string {
-   guistr: "# # String gsaved with Nlview 6.5.12  2016-01-29 bk=1.3547 VDI=39 GEI=35 GUI=JA:1.6
-#  -string -flagsOSRD
-preplace port s_axi_aclk -pg 1 -y 950 -defaultsOSRD
-preplace port S_AXI_LITE -pg 1 -y 970 -defaultsOSRD
-preplace port smg_enb -pg 1 -y 780 -defaultsOSRD
-preplace port m_axi_s2mm_aclk -pg 1 -y 910 -defaultsOSRD
-preplace port s_axi_trace_cntrl -pg 1 -y 610 -defaultsOSRD
-preplace port S_AXI -pg 1 -y 440 -defaultsOSRD
-preplace port smg_rst -pg 1 -y 690 -defaultsOSRD
-preplace port S_AXI1 -pg 1 -y 570 -defaultsOSRD
-preplace port S_AXI2 -pg 1 -y 590 -defaultsOSRD
-preplace port M00_AXI -pg 1 -y 900 -defaultsOSRD
-preplace portBus probe4 -pg 1 -y 1190 -defaultsOSRD
-preplace portBus In0 -pg 1 -y 250 -defaultsOSRD
-preplace portBus Dout1 -pg 1 -y 1040 -defaultsOSRD
-preplace portBus probe5 -pg 1 -y 1210 -defaultsOSRD
-preplace portBus In1 -pg 1 -y 270 -defaultsOSRD
-preplace portBus probe6 -pg 1 -y 1230 -defaultsOSRD
-preplace portBus In3 -pg 1 -y 370 -defaultsOSRD
-preplace portBus Dout -pg 1 -y 380 -defaultsOSRD
-preplace portBus ARESETN -pg 1 -y 390 -defaultsOSRD
-preplace portBus axi_resetn -pg 1 -y 930 -defaultsOSRD
-preplace portBus s_axi_aresetn -pg 1 -y 480 -defaultsOSRD
-preplace portBus gpio_io_o -pg 1 -y 1020 -defaultsOSRD
-preplace inst constant_12bit_0 -pg 1 -lvl 4 -y 200 -defaultsOSRD
-preplace inst axi_dma_0 -pg 1 -lvl 5 -y 1724 -defaultsOSRD
-preplace inst axi_mem_intercon_1 -pg 1 -lvl 6 -y 850 -defaultsOSRD
-preplace inst slice_pg_data -pg 1 -lvl 6 -y 380 -defaultsOSRD
-preplace inst logic_0 -pg 1 -lvl 5 -y 322 -defaultsOSRD
-preplace inst pg -pg 1 -lvl 5 -y 642 -defaultsOSRD
-preplace inst concat_addrB -pg 1 -lvl 5 -y 110 -defaultsOSRD
-preplace inst trace_cntrl_0 -pg 1 -lvl 3 -y 710 -defaultsOSRD
-preplace inst blk_mem_gen_0 -pg 1 -lvl 6 -y 540 -defaultsOSRD
-preplace inst constant_tstrb -pg 1 -lvl 2 -y 890 -defaultsOSRD
-preplace inst constant_4bit_0 -pg 1 -lvl 5 -y 2 -defaultsOSRD
-preplace inst ila_0 -pg 1 -lvl 6 -y 1140 -defaultsOSRD
-preplace inst constant_2bits_0 -pg 1 -lvl 1 -y 320 -defaultsOSRD
-preplace inst constant_32bit_0 -pg 1 -lvl 5 -y 210 -defaultsOSRD
-preplace inst concat_tkeep -pg 1 -lvl 2 -y 740 -defaultsOSRD
-preplace inst concat_arduino -pg 1 -lvl 2 -y 300 -defaultsOSRD
-preplace inst constant_2bit_0 -pg 1 -lvl 4 -y 120 -defaultsOSRD
-preplace inst axis_data_fifo_0 -pg 1 -lvl 4 -y 880 -defaultsOSRD
-preplace inst axi_bram_ctrl_1 -pg 1 -lvl 5 -y 430 -defaultsOSRD
-preplace netloc Conn1 1 6 1 NJ
-preplace netloc pg_addrB 1 4 2 1190 500 1630
-preplace netloc logic_0_dout 1 5 1 NJ
-preplace netloc constant_4bit_0_dout 1 5 1 1750
-preplace netloc axi_gpio_pg_tri_control_gpio_io_o 1 5 2 NJ 670 NJ
-preplace netloc constant_tkeep_tstrb_dout 1 2 1 NJ
-preplace netloc constant_12bit_0_dout 1 4 1 NJ
-preplace netloc ar2sw_data_i_1 1 0 6 NJ 270 180 430 NJ 430 NJ 430 NJ 770 1600
-preplace netloc constant_2bit_0_dout 1 4 1 NJ
-preplace netloc ap_rst_n_1 1 0 6 NJ 600 NJ 600 430 840 750 800 1110 870 1760
-preplace netloc mb_axi_periph_M07_AXI 1 0 3 NJ 610 NJ 610 NJ
-preplace netloc mb_axi_periph_M04_AXI 1 0 5 NJ 570 NJ 570 NJ 570 NJ 570 NJ
-preplace netloc constant_32bit_0_dout 1 5 1 NJ
-preplace netloc pg_smg_rst 1 5 2 1700 690 NJ
-preplace netloc pg_enb_1d 1 1 5 200 620 410 830 NJ 780 NJ 780 1660
-preplace netloc clk1_1 1 0 6 NJ 910 NJ 940 450 900 750 970 1180 790 1620
-preplace netloc axi_mem_intercon_M00_AXI 1 0 5 NJ 410 NJ 410 NJ 410 NJ 410 NJ
-preplace netloc concat_arduino_dout 1 2 1 450
-preplace netloc ARESETN_2 1 0 6 NJ 390 NJ 390 NJ 390 NJ 390 NJ 830 NJ
-preplace netloc mb_axi_periph_M05_AXI 1 0 5 NJ 580 NJ 580 NJ 580 NJ 580 NJ
-preplace netloc slice_pg_data_Dout 1 6 1 NJ
-preplace netloc axi_dma_0_M_AXI_S2MM 1 5 1 1690
-preplace netloc pg_smg_enb_1d 1 5 1 1610
-preplace netloc pg_smg_enb 1 5 2 NJ 730 NJ
-preplace netloc pg_enb 1 5 1 1710
-preplace netloc interface_switch_0_sw2ar_tri_o 1 0 6 NJ 370 NJ 210 NJ 210 NJ 270 NJ 270 1640
-preplace netloc axis_data_fifo_0_M_AXIS 1 4 1 1130
-preplace netloc pg_Dout 1 5 2 NJ 720 NJ
-preplace netloc processing_system7_0_FCLK_CLK0 1 0 6 NJ 950 NJ 950 NJ 950 NJ 960 1140 960 NJ
-preplace netloc blk_mem_gen_0_doutb 1 5 1 1770
-preplace netloc mb_axi_periph_M08_AXI 1 0 5 NJ 980 NJ 980 NJ 980 NJ 980 NJ
-preplace netloc axi_bram_ctrl_1_BRAM_PORTA 1 5 1 1730
-preplace netloc probe6_1 1 0 6 NJ 1160 NJ 1160 NJ 1160 NJ 1160 NJ 1160 NJ
-preplace netloc probe5_1 1 0 6 NJ 1140 NJ 1140 NJ 1140 NJ 1140 NJ 1140 NJ
-preplace netloc pg_enb_1d1 1 5 1 1630
-preplace netloc interface_switch_0_sw2ar_data_o 1 0 6 NJ 250 NJ 200 NJ 200 NJ 260 NJ 260 NJ
-preplace netloc constant_2bits_0_dout 1 1 1 190
-preplace netloc trace_cntrl_0_B 1 3 1 730
-preplace netloc probe4_1 1 0 6 NJ 1120 NJ 1120 NJ 1120 NJ 1120 NJ 1120 NJ
-preplace netloc concat_tkeep_dout 1 2 1 NJ
-preplace netloc concat_addrB_dout 1 5 1 1760
-preplace netloc S00_ARESETN_1 1 0 5 NJ 480 NJ 480 NJ 480 NJ 480 1180
-levelinfo -pg 1 -20 100 320 620 960 1440 3260 3460 -top -40 -bot 1820
-",
-}
-
   # Restore current instance
   current_bd_instance $oldCurInst
 }
@@ -1127,8 +1036,9 @@ CONFIG.CONST_WIDTH {20} \
   # Create instance: function_sel, and set properties
   set function_sel [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 function_sel ]
   set_property -dict [ list \
-CONFIG.C_ALL_OUTPUTS {1} \
-CONFIG.C_ALL_OUTPUTS_2 {1} \
+CONFIG.C_ALL_INPUTS {0} \
+CONFIG.C_ALL_OUTPUTS {0} \
+CONFIG.C_ALL_OUTPUTS_2 {0} \
 CONFIG.C_GPIO2_WIDTH {20} \
 CONFIG.C_GPIO_WIDTH {20} \
 CONFIG.C_IS_DUAL {1} \
@@ -1248,8 +1158,8 @@ CONFIG.DOUT_WIDTH {20} \
   connect_bd_net -net dff_en_reset_0_q [get_bd_pins iop3_intr_req] [get_bd_pins dff_en_reset_0/q]
   connect_bd_net -net enb_1 [get_bd_pins pg_o/smg_enb] [get_bd_pins smg_0/enb]
   connect_bd_net -net func_sel_concat_dout [get_bd_pins func_sel_concat/dout] [get_bd_pins interface_switch_0/sel]
-  connect_bd_net -net function_sel_gpio2_io_o [get_bd_pins func_sel_concat/In1] [get_bd_pins function_sel/gpio2_io_o]
-  connect_bd_net -net function_sel_gpio_io_o [get_bd_pins func_sel_concat/In0] [get_bd_pins function_sel/gpio_io_o]
+  connect_bd_net -net function_sel_gpio2_io_o [get_bd_pins func_sel_concat/In1] [get_bd_pins function_sel/gpio2_io_i] [get_bd_pins function_sel/gpio2_io_o]
+  connect_bd_net -net function_sel_gpio_io_o [get_bd_pins func_sel_concat/In0] [get_bd_pins function_sel/gpio_io_i] [get_bd_pins function_sel/gpio_io_o]
   connect_bd_net -net interface_switch_0_sw2ar_data_o [get_bd_pins sw2ar_data_o] [get_bd_pins interface_switch_0/sw2ar_data_o] [get_bd_pins pg_o/In0]
   connect_bd_net -net interface_switch_0_sw2ar_tri_o [get_bd_pins sw2ar_tri_o] [get_bd_pins interface_switch_0/sw2ar_tri_o] [get_bd_pins pg_o/In3]
   connect_bd_net -net interface_switch_0_sw2cfg_data_i [get_bd_pins concat_cfg_data_i_pb/In0] [get_bd_pins interface_switch_0/sw2cfg_data_i]
@@ -1274,123 +1184,6 @@ CONFIG.DOUT_WIDTH {20} \
   connect_bd_net -net smg_0_tri2sw [get_bd_pins interface_switch_0/smg2sw_tri_o] [get_bd_pins smg_0/smgtri2sw]
   connect_bd_net -net smg_0_y [get_bd_pins pg_o/probe5] [get_bd_pins smg_0/y]
   connect_bd_net -net sw2smg_1 [get_bd_pins interface_switch_0/sw2smg_data_i] [get_bd_pins smg_0/sw2smg]
-
-  # Perform GUI Layout
-  regenerate_bd_layout -hierarchy [get_bd_cells /iop3] -layout_string {
-   guistr: "# # String gsaved with Nlview 6.5.12  2016-01-29 bk=1.3547 VDI=39 GEI=35 GUI=JA:1.6
-#  -string -flagsOSRD
-preplace port pg_tracebuffer_clk -pg 1 -y 430 -defaultsOSRD
-preplace port iop3_intr_req -pg 1 -y 1360 -defaultsOSRD
-preplace port mb_debug_sys_rst -pg 1 -y 1000 -defaultsOSRD
-preplace port M01_AXI -pg 1 -y 1160 -defaultsOSRD
-preplace port DEBUG -pg 1 -y 1120 -defaultsOSRD
-preplace port clk -pg 1 -y 850 -defaultsOSRD
-preplace port M00_AXI -pg 1 -y 400 -defaultsOSRD
-preplace port BRAM_PORTB -pg 1 -y 1140 -defaultsOSRD
-preplace portBus sw2ar_data_o -pg 1 -y 200 -defaultsOSRD
-preplace portBus mb_3_intr_ack -pg 1 -y 1390 -defaultsOSRD
-preplace portBus M10_ARESETN -pg 1 -y 570 -defaultsOSRD
-preplace portBus ar2sw_data_i -pg 1 -y 730 -defaultsOSRD
-preplace portBus ARESETN -pg 1 -y 710 -defaultsOSRD
-preplace portBus sw2ar_tri_o -pg 1 -y 220 -defaultsOSRD
-preplace portBus aux_reset_in -pg 1 -y 980 -defaultsOSRD
-preplace portBus pb_in -pg 1 -y 800 -defaultsOSRD
-preplace portBus ap_rst_n -pg 1 -y 450 -defaultsOSRD
-preplace portBus ext_reset_in -pg 1 -y 960 -defaultsOSRD
-preplace portBus cfg2led -pg 1 -y 150 -defaultsOSRD
-preplace inst axi_intc_0 -pg 1 -lvl 3 -y 830 -defaultsOSRD
-preplace inst slice_cfg_data_o_23_20 -pg 1 -lvl 9 -y 122 -defaultsOSRD -resize 140 60
-preplace inst mb -pg 1 -lvl 4 -y 1050 -defaultsOSRD
-preplace inst func_sel_concat -pg 1 -lvl 7 -y 390 -defaultsOSRD
-preplace inst constant_20bit_0 -pg 1 -lvl 7 -y 600 -defaultsOSRD
-preplace inst concat_cfg_data_i_pb -pg 1 -lvl 2 -y 790 -defaultsOSRD
-preplace inst cfg_0 -pg 1 -lvl 3 -y 690 -defaultsOSRD
-preplace inst axi_cdma_0 -pg 1 -lvl 7 -y 830 -defaultsOSRD
-preplace inst bit24_0 -pg 1 -lvl 3 -y 580 -defaultsOSRD
-preplace inst logic_1 -pg 1 -lvl 8 -y 1320 -defaultsOSRD
-preplace inst function_sel -pg 1 -lvl 3 -y 420 -defaultsOSRD
-preplace inst pg_o -pg 1 -lvl 9 -y 442 -defaultsOSRD
-preplace inst mb3_lmb -pg 1 -lvl 5 -y 1120 -defaultsOSRD
-preplace inst mb_axi_periph -pg 1 -lvl 2 -y 350 -defaultsOSRD
-preplace inst dff_en_reset_0 -pg 1 -lvl 9 -y 2404 -defaultsOSRD
-preplace inst smg_0 -pg 1 -lvl 9 -y 2054 -defaultsOSRD
-preplace inst rst_clk_wiz_1_100M -pg 1 -lvl 1 -y 980 -defaultsOSRD
-preplace inst iop3_intr -pg 1 -lvl 3 -y 1050 -defaultsOSRD
-preplace inst cfg_data_mux_vector -pg 1 -lvl 6 -y 600 -defaultsOSRD
-preplace inst slice_cfg_tri_o_19_0 -pg 1 -lvl 7 -y 700 -defaultsOSRD -resize 140 60
-preplace inst slice_cfg_data_o_19_0 -pg 1 -lvl 7 -y 500 -defaultsOSRD
-preplace inst axi_mem_intercon -pg 1 -lvl 8 -y 1130 -defaultsOSRD
-preplace inst interface_switch_0 -pg 1 -lvl 8 -y 590 -defaultsOSRD
-preplace netloc cfg_data_mux_vector_y 1 6 3 2180 120 NJ 120 NJ
-preplace netloc ar2sw_data_i_1 1 0 9 NJ 730 NJ 900 NJ 910 NJ 670 NJ 670 NJ 670 NJ 650 2540 430 NJ
-preplace netloc dff_en_reset_0_q 1 9 1 NJ
-preplace netloc mb_axi_periph_M00_AXI 1 2 1 810
-preplace netloc function_sel_gpio_io_o 1 3 4 1210 380 NJ 380 NJ 380 NJ
-preplace netloc axi_mem_intercon_M01_AXI 1 8 2 NJ 1130 NJ
-preplace netloc smg_0_doutb 1 8 2 3090 220 3620
-preplace netloc smg_0_fsm2sw 1 7 3 2550 860 NJ 860 3590
-preplace netloc cfg_0_cfg2shield_tri_out 1 3 4 NJ 680 NJ 680 NJ 680 NJ
-preplace netloc constant_20bit_0_dout 1 7 1 2510
-preplace netloc mb_axi_periph_M04_AXI 1 2 7 NJ 300 NJ 300 NJ 300 NJ 300 NJ 300 NJ 300 NJ
-preplace netloc microblaze_0_dlmb_1 1 4 1 1770
-preplace netloc enb_1 1 8 2 3060 70 3590
-preplace netloc mb_axi_periph_M11_AXI 1 2 7 NJ 290 NJ 290 NJ 290 NJ 290 NJ 290 NJ 290 NJ
-preplace netloc smg_0_y 1 8 2 3100 230 3640
-preplace netloc rst_clk_wiz_1_100M_mb_reset 1 1 3 NJ 940 NJ 940 1210
-preplace netloc mb_axi_periph_M05_AXI 1 2 7 NJ 320 NJ 320 NJ 320 NJ 320 NJ 320 NJ 320 NJ
-preplace netloc rst_clk_wiz_1_100M_bus_struct_reset 1 1 4 NJ 960 NJ 1160 NJ 1160 N
-preplace netloc smg_0_tri2sw 1 7 3 2560 870 NJ 870 3580
-preplace netloc iop3_intr_gpio_io_o 1 3 6 NJ 970 NJ 970 NJ 970 NJ 970 NJ 970 NJ
-preplace netloc mb_axi_periph_M03_AXI 1 2 1 740
-preplace netloc microblaze_0_ilmb_1 1 4 1 1750
-preplace netloc axi_cdma_0_M_AXI 1 7 1 2540
-preplace netloc mdm_1_debug_sys_rst 1 0 1 NJ
-preplace netloc interface_switch_0_sw2ar_tri_o 1 8 2 2960 190 NJ
-preplace netloc pg_o_Dout 1 7 3 2550 50 NJ 50 3610
-preplace netloc mb_bram_ctrl_1_BRAM_PORTA 1 0 5 NJ 1140 NJ 1140 NJ 1140 NJ 1140 NJ
-preplace netloc pb_in_1 1 0 2 NJ 800 NJ
-preplace netloc clk1_1 1 0 9 NJ 430 350 950 NJ 960 NJ 960 NJ 960 NJ 960 NJ 960 NJ 960 3040
-preplace netloc M10_ARESETN_1 1 0 8 NJ 570 340 730 NJ 1230 NJ 1230 NJ 1230 NJ 1230 NJ 1230 NJ
-preplace netloc mb_axi_periph_M09_AXI 1 2 7 NJ 340 NJ 340 NJ 340 NJ 340 NJ 330 NJ 330 NJ
-preplace netloc processing_system7_0_FCLK_CLK0 1 0 9 -10 850 360 850 820 980 1240 1130 1760 980 NJ 980 2180 980 2560 940 3030
-preplace netloc mb_M_AXI_DP 1 1 4 390 930 NJ 930 NJ 930 1740
-preplace netloc microblaze_0_debug 1 0 4 NJ 1120 NJ 1120 NJ 1120 NJ
-preplace netloc interface_switch_0_sw2cfg_data_i 1 1 8 400 920 NJ 920 NJ 920 NJ 920 NJ 920 NJ 920 NJ 920 2930
-preplace netloc cfg_0_cfg2led 1 9 1 NJ
-preplace netloc S00_ARESETN_1 1 1 8 370 860 830 950 NJ 950 NJ 950 NJ 950 2200 950 2550 950 3050
-preplace netloc logic_1_dout1 1 8 1 NJ
-preplace netloc mb_axi_periph_M06_AXI 1 2 1 800
-preplace netloc ap_rst_n_1 1 0 9 NJ 450 380 720 NJ 280 NJ 280 NJ 280 NJ 280 NJ 280 NJ 280 NJ
-preplace netloc slice_cfg_data_o_19_0_Dout 1 7 1 NJ
-preplace netloc mb_axi_periph_M07_AXI 1 2 7 NJ 330 NJ 330 NJ 330 NJ 330 NJ 450 NJ 370 NJ
-preplace netloc probe6_1 1 8 2 3080 210 3630
-preplace netloc mb_1_reset_Dout 1 0 1 NJ
-preplace netloc pg_o_Dout1 1 5 5 1970 40 NJ 40 NJ 40 NJ 40 3650
-preplace netloc function_sel_gpio2_io_o 1 3 4 1220 400 NJ 400 NJ 400 NJ
-preplace netloc Conn1 1 9 1 NJ
-preplace netloc mb_axi_periph_M12_AXI 1 2 1 730
-preplace netloc sw2smg_1 1 8 1 2940
-preplace netloc cfg_0_cfg2shield_data_out 1 3 3 NJ 600 NJ 600 N
-preplace netloc mb_axi_periph_M01_AXI 1 2 5 NJ 250 NJ 250 NJ 250 NJ 250 2200
-preplace netloc axi_mem_intercon_M02_AXI 1 8 1 2950
-preplace netloc concat_cfg_data_i_pb_dout 1 2 1 800
-preplace netloc pg_o_smg_rst 1 8 2 3070 200 3580
-preplace netloc bit24_0_dout 1 3 3 NJ 580 NJ 580 N
-preplace netloc logic_1_dout 1 0 1 NJ
-preplace netloc mb_axi_periph_M08_AXI 1 2 7 NJ 500 NJ 500 NJ 500 NJ 500 NJ 550 NJ 350 3030
-preplace netloc interface_switch_0_sw2ar_data_o 1 8 2 2950 180 NJ
-preplace netloc axi_mem_intercon_M00_AXI 1 8 1 3020
-preplace netloc ARESETN_1 1 1 7 330 970 770 970 NJ 940 NJ 940 NJ 940 NJ 940 NJ
-preplace netloc axi_cdma_0_cdma_introut 1 2 6 840 1210 NJ 1210 NJ 1210 NJ 1210 NJ 1210 2510
-preplace netloc ARESETN_2 1 0 9 NJ 710 NJ 710 NJ 260 NJ 260 NJ 260 NJ 260 NJ 260 NJ 260 NJ
-preplace netloc reset_1 1 0 9 NJ 1390 NJ 1390 NJ 1390 NJ 1390 NJ 1390 NJ 1390 NJ 1390 NJ 1390 NJ
-preplace netloc func_sel_concat_dout 1 7 1 2530
-preplace netloc slice_cfg_tri_o_19_0_Dout 1 7 1 2520
-preplace netloc axi_intc_0_interrupt 1 3 1 1250
-preplace netloc axi_gpio_pg_tri_control_gpio_io_o 1 7 3 2560 60 NJ 60 3600
-levelinfo -pg 1 -30 160 550 1030 1520 1880 2070 2390 2750 3440 6520 -top 0 -bot 2490
-",
-}
 
   # Restore current instance
   current_bd_instance $oldCurInst
