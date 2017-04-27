@@ -31,90 +31,12 @@ __author__ = "Yun Rock Qu"
 __copyright__ = "Copyright 2017, Xilinx"
 __email__ = "pynq_support@xilinx.com"
 
-import os
 import re
-import csv
-import json
 import numpy as np
-import ctypes
-import copy
-from .intf_const import ARDUINO
-from .intf_const import PATTERN_FREQUENCY_MHZ
-from .intf_const import INPUT_SAMPLE_SIZE
-from .intf_const import INPUT_PIN_MAP
-from .intf_const import OUTPUT_SAMPLE_SIZE
-from .intf_const import OUTPUT_PIN_MAP
-from .intf_const import CMD_GENERATE_PATTERN_SINGLE
+from .intf_const import INTF_MICROBLAZE_BIN
 from .intf import request_intf
 from .waveform import Waveform
-from .pattern_analyzer import PatternAnalyzer
-
-ARDUINO_PG_PROGRAM = "arduino_intf.bin"
-
-
-def _wave_to_bitstring(wave):
-    """Function to convert a pattern consisting of `l`, `h`, and dot to a
-    sequence of `0` and `1`.
-
-    Parameters
-    ----------
-    wave : str
-        The input string to convert.
-
-    Returns
-    -------
-    list
-        A list of elements, each element being 0 or 1.
-
-    """
-    substitution_map = {'l': '0', 'h': '1'}
-
-    def delete_dots(match):
-        return substitution_map[match.group()[0]] * len(match.group())
-
-    wave_regex = re.compile(r'[l]\.*|[h]\.*')
-    return re.sub(wave_regex, delete_dots, wave)
-
-
-def _bitstring_to_int(bitstring):
-    """Function to convert a bit string to integer list.
-
-    For example, if the bit string is '0110', then the integer list will be
-    [0,1,1,0].
-
-    Parameters
-    ----------
-    bistring : str
-        The input string to convert.
-
-    Returns
-    -------
-    list
-        A list of elements, each element being 0 or 1.
-
-    """
-    return [int(i, 10) for i in list(bitstring)]
-
-
-def _int_to_sample(bits):
-    """Function to convert a bit list into a multi-bit sample.
-
-    Example: [1, 1, 1, 0] will be converted to 7, since the LSB of the sample
-    appears first in the sequence.
-
-    Parameters
-    ----------
-    bits : list
-        A list of bits, each element being 0 or 1.
-
-    Returns
-    -------
-    int
-        A numpy uint32 converted from the bit samples.
-
-    """
-    return np.uint32(int("".join(map(str, list(bits[::-1]))), 2))
-
+from .trace_analyzer import TraceAnalyzer
 
 class PatternGenerator:
     """Class for the Pattern Generator.
@@ -138,7 +60,7 @@ class PatternGenerator:
     """
 
     def __init__(self, if_id, waveform_dict, stimulus_name='stimulus',
-                 analysis_name='analysis', use_analyzer=True):
+                 analysis_name='analysis', analyzer_spec=None):
         """Return a new Arduino_PG object.
 
         Parameters
@@ -157,13 +79,7 @@ class PatternGenerator:
             Indicate whether to use the analyzer to capture the trace as well.
 
         """
-        if os.geteuid() != 0:
-            raise EnvironmentError('Root permissions required.')
-        if if_id not in [ARDUINO]:
-            raise ValueError("No such INTF for Arduino interface.")
-
-        self.if_id = if_id
-        self.intf = request_intf(if_id, ARDUINO_PG_PROGRAM)
+        self.intf = request_intf(if_id, INTF_MICROBLAZE_BIN)
         self.src_samples = None
         self.dst_samples = None
         self.waveform = Waveform(waveform_dict, stimulus_name=stimulus_name,
@@ -178,8 +94,8 @@ class PatternGenerator:
         self._wave_length_equal = self._is_wave_length_equal()
         self._longest_wave, self._max_wave_length = self._get_max_wave_length()
 
-        if use_analyzer:
-            self.analyzer = PatternAnalyzer(if_id)
+        if analyzer_spec is not None:
+            self.analyzer = TraceAnalyzer(if_id, analyzer_spec)
         else:
             self.analyzer = None
 
@@ -200,6 +116,141 @@ class PatternGenerator:
 
         """
         return self._longest_wave
+
+    def config(self, frequency_mhz=10):
+        """Configure the PG with a single bit pattern.
+
+        Generates a bit pattern for a single shot operation at specified IO 
+        pins with the specified number of samples.
+
+        Each bit of the 20-bit patterns, from LSB to MSB, corresponds to:
+        D0, D1, ..., D19, A0, A1, ..., A5, respectively.
+
+        Note the all the lanes should have the same number of samples. And the
+        token inside wave are already converted into bit string.
+
+        Users can ignore the returned data in case only the pattern
+        generator is required.
+
+        Parameters
+        ----------
+        frequency_mhz: float
+            The frequency of the captured samples, in MHz.
+
+        Returns
+        -------
+        (numpy.ndarray,numpy.ndarray)
+            The generated samples, and the captured samples.
+
+        """
+        self._make_same_wave_length()
+        self.intf.clk.fclk1_mhz = frequency_mhz
+        direction_mask = 0xFFFFF
+        num_samples = self._max_wave_length
+        temp_lanes = np.zeros((OUTPUT_SAMPLE_SIZE, num_samples),
+                              dtype=np.uint8)
+        data = self.stimulus_waves[:]
+        for index, wave in enumerate(data):
+            pin_number = OUTPUT_PIN_MAP[self.stimulus_pins[index]]
+            direction_mask &= (~(1 << pin_number))
+            temp_lanes[pin_number] = data[index] = _bitstring_to_int(
+                _wave_to_bitstring(wave))
+        temp_samples = temp_lanes.T.copy()
+        self.src_samples = np.apply_along_axis(_int_to_sample, 1, temp_samples)
+
+        # Allocate the source buffer
+        src_addr = self.intf.allocate_buffer('src_buf', num_samples,
+                                             data_type="unsigned int")
+
+        # Write samples into the source buffer
+        for index, data in enumerate(self.src_samples):
+            self.intf.buffers['src_buf'][index] = data
+
+        # Wait for the interface processor to return control
+        self.intf.write_control([direction_mask, src_addr, num_samples])
+        self.intf.write_command(CMD_CONFIG_PG)
+
+        # Free the DRAM pattern buffer - pattern now in BRAM
+        self.intf.free_buffer('src_buf')
+
+    def arm(self):
+        self.intf.write_command(CMD_ARM_PG)
+
+    def run(self):
+        self.intf.write_command(CMD_RUN)
+
+    def display(self):
+
+        # Construct the numpy array from the destination buffer
+        if self.analyzer:
+            self.analysis_group = self.analyzer.analyze()
+            self.waveform.update(self.analysis_name, self.analysis_group)
+
+
+    def _wave_to_bitstring(wave):
+        """Function to convert a pattern consisting of `l`, `h`, and dot to a
+        sequence of `0` and `1`.
+
+        Parameters
+        ----------
+        wave : str
+            The input string to convert.
+
+        Returns
+        -------
+        list
+            A list of elements, each element being 0 or 1.
+
+        """
+        substitution_map = {'l': '0', 'h': '1'}
+
+        def delete_dots(match):
+            return substitution_map[match.group()[0]] * len(match.group())
+
+        wave_regex = re.compile(r'[l]\.*|[h]\.*')
+        return re.sub(wave_regex, delete_dots, wave)
+
+
+    def _bitstring_to_int(bitstring):
+        """Function to convert a bit string to integer list.
+
+        For example, if the bit string is '0110', then the integer list will be
+        [0,1,1,0].
+
+        Parameters
+        ----------
+        bistring : str
+            The input string to convert.
+
+        Returns
+        -------
+        list
+            A list of elements, each element being 0 or 1.
+
+        """
+        return [int(i, 10) for i in list(bitstring)]
+
+
+    def _int_to_sample(bits):
+        """Function to convert a bit list into a multi-bit sample.
+
+        Example: [1, 1, 1, 0] will be converted to 7, since the LSB of the sample
+        appears first in the sequence.
+
+        Parameters
+        ----------
+        bits : list
+            A list of bits, each element being 0 or 1.
+
+        Returns
+        -------
+        int
+            A numpy uint32 converted from the bit samples.
+
+        """
+        return np.uint32(int("".join(map(str, list(bits[::-1]))), 2))
+
+
 
     def _is_wave_length_equal(self):
         """Test if all the waves are of the same length.
@@ -265,70 +316,3 @@ class PatternGenerator:
                       f"{self._max_wave_length} tokens to match " +
                       f"{self._longest_wave}, " +
                       f"the longest WaveLane in the group.")
-
-    def generate(self, frequency_mhz=PATTERN_FREQUENCY_MHZ):
-        """Configure the PG with a single bit pattern.
-
-        Generates a bit pattern for a single shot operation at specified IO 
-        pins with the specified number of samples.
-
-        Each bit of the 20-bit patterns, from LSB to MSB, corresponds to:
-        D0, D1, ..., D19, A0, A1, ..., A5, respectively.
-
-        Note the all the lanes should have the same number of samples. And the
-        token inside wave are already converted into bit string.
-
-        Users can ignore the returned data in case only the pattern
-        generator is required.
-
-        Parameters
-        ----------
-        frequency_mhz: float
-            The frequency of the captured samples, in MHz.
-
-        Returns
-        -------
-        (numpy.ndarray,numpy.ndarray)
-            The generated samples, and the captured samples.
-
-        """
-        self._make_same_wave_length()
-        self.intf.clk.fclk1_mhz = frequency_mhz
-        direction_mask = 0xFFFFF
-        num_samples = self._max_wave_length
-        temp_lanes = np.zeros((OUTPUT_SAMPLE_SIZE, num_samples),
-                              dtype=np.uint8)
-        data = self.stimulus_waves[:]
-        for index, wave in enumerate(data):
-            pin_number = OUTPUT_PIN_MAP[self.stimulus_pins[index]]
-            direction_mask &= (~(1 << pin_number))
-            temp_lanes[pin_number] = data[index] = _bitstring_to_int(
-                _wave_to_bitstring(wave))
-        temp_samples = temp_lanes.T.copy()
-        self.src_samples = np.apply_along_axis(_int_to_sample, 1, temp_samples)
-
-        # Allocate the source and destination buffers
-        src_addr = self.intf.allocate_buffer('src_buf', num_samples,
-                                             data_type="unsigned int")
-        dst_addr = self.intf.allocate_buffer('dst_buf', num_samples,
-                                             data_type="unsigned long long")
-
-        # Write samples into the source buffer
-        for index, data in enumerate(self.src_samples):
-            self.intf.buffers['src_buf'][index] = data
-
-        # Wait for the interface processor to return control
-        self.intf.write_control(
-            [direction_mask, src_addr, num_samples, dst_addr])
-        self.intf.write_command(CMD_GENERATE_PATTERN_SINGLE)
-
-        # Construct the numpy array from the destination buffer
-        if self.analyzer:
-            self.dst_samples = self.intf.ndarray_from_buffer(
-                'dst_buf', num_samples * 8, dtype=np.uint64)
-            self.analysis_group = self.analyzer.analyze(self.dst_samples)
-            self.waveform.update(self.analysis_name, self.analysis_group)
-
-        # Free the 2 buffers
-        self.intf.free_buffer('src_buf')
-        self.intf.free_buffer('dst_buf')

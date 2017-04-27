@@ -40,7 +40,7 @@ from .intf_const import FSM_MAX_STATE_INPUT_BITS
 from .intf_const import FSM_MAX_OUTPUT_BITS
 from .intf_const import INTF_MICROBLAZE_BIN
 from .intf_const import PYNQZ1_DIO_SPECIFICATION
-from .intf_const import CMD_CONFIG_SMG
+from .intf_const import CMD_CONFIG_SMG,CMD_ARM_SMG,CMD_RUN,IOSWITCH_SMG_SELECT,CMD_STOP
 from .intf import request_intf
 from .trace_analyzer import TraceAnalyzer
 from .waveform import Waveform
@@ -118,7 +118,7 @@ class FSMGenerator:
     """
 
     def __init__(self, if_id, fsm_spec=None,
-                 intf_spec=PYNQZ1_DIO_SPECIFICATION, use_analyzer=True, use_state_bits=False):
+                 intf_spec=PYNQZ1_DIO_SPECIFICATION, use_analyzer=True, use_state_bits=False, num_analyzer_samples=4096):
         """Initialize the FSM generator class.
 
         Users can specify the `fsm_spec` when instantiating the object, or
@@ -177,7 +177,7 @@ class FSMGenerator:
         self._bram_data = np.zeros(2 ** FSM_BRAM_ADDR_WIDTH, dtype=np.uint32)
 
         if use_analyzer:
-            self.analyzer = TraceAnalyzer(if_id,trace_spec=intf_spec)
+            self.analyzer = TraceAnalyzer(if_id,num_samples=num_analyzer_samples, trace_spec=intf_spec)
         else:
             self.analyzer = None
 
@@ -400,6 +400,17 @@ class FSMGenerator:
                         (output_value << FSM_MAX_STATE_INPUT_BITS) + \
                         next_state_code
 
+
+    def _config_ioswitch(self):
+
+        # gather which pins are being used
+        ioswitch_pins = [self.intf_spec['output_pin_map'][ins[1]] for ins in self.fsm_spec['inputs']]
+        ioswitch_pins.extend([self.intf_spec['output_pin_map'][outs[1]] for outs in self.fsm_spec['outputs']])
+
+        # send list to intf processor for handling
+        self.intf.config_ioswitch(ioswitch_pins,IOSWITCH_SMG_SELECT)
+
+
     def config(self, frequency_mhz=10):
         """Configure the programmable FSM generator.
 
@@ -418,6 +429,8 @@ class FSMGenerator:
         """
         # Set the FSM frequency
         self.intf.clk.fclk1_mhz = frequency_mhz
+
+        self._config_ioswitch()
 
         # Load BRAM data into the main memory
         self._config_load_buffer()
@@ -500,13 +513,18 @@ class FSMGenerator:
         self.intf.write_command(CMD_CONFIG_SMG)
         self.running = True
 
-        # Construct the numpy array from the destination buffer
+        # configure the tracebuffer
         if self.analyzer is not None:
-            analysis_group = self.analyzer.analyze()
-            self.waveform.update('analysis', analysis_group)
+            self.analyzer.config()
 
         # Free the BRAM buffer
         self.intf.free_buffer('bram_data_buf')
+
+    def arm(self):
+        self.intf.write_command(CMD_ARM_SMG)
+
+        if self.analyzer is not None:
+            self.analyzer.arm()
 
     def stop(self):
         """Stop the FSM pattern generator.
@@ -521,7 +539,7 @@ class FSMGenerator:
         self.intf.write_command(CMD_STOP)
 
 
-    def run(self):
+    def start(self):
         """Start generating patterns or capturing the trace only.
 
         If there are existing FSM running on Microblaze, this method will
@@ -543,7 +561,7 @@ class FSMGenerator:
         self.intf.write_command(CMD_RUN)
 
 
-    def display(self, file_name='fsm_spec.png'):
+    def display_graph(self, file_name='fsm_spec.png'):
         """Display the state machine in Jupyter notebook.
 
         This method uses the installed package `pygraphviz`. References:
@@ -582,6 +600,17 @@ class FSMGenerator:
         graph.draw(file_name)
         display(Image(filename=file_name))
         os.system("rm -rf fsm_spec.dot")
+
+    def display(self):
+
+        if self.analyzer is not None:
+            analysis_group = self.analyzer.analyze()
+            self.waveform.update('analysis', analysis_group)
+        else:
+            print("Trace disabled, please enable, rerun FSM, and run display().")
+
+        self.waveform.display()
+
 
     def _check_pins(self, fsm_spec, key):
         """Check whether the pins specified are in a valid range.

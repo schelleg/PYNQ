@@ -33,6 +33,7 @@ __email__ = "pynq_support@xilinx.com"
 
 
 import os
+import numpy as np
 
 # Microblaze constants
 BIN_LOCATION = os.path.dirname(os.path.realpath(__file__)) + "/"
@@ -53,6 +54,7 @@ CMD_GENERATE_FSM_STOP = 0x00B
 CMD_TRACE_FSM_ONLY = 0x00D
 
 CMD_INTF_SWITCH_CONFIG = 0x1
+CMD_READ_INTF_SWITCH_CONFIG = 0xa
 CMD_CONFIG_CFG = 0x2
 CMD_CONFIG_PG = 0x3
 CMD_CONFIG_SMG = 0x4
@@ -65,10 +67,14 @@ CMD_RUN = 0xD
 CMD_STOP = 0xE
 CMD_RUN_STATUS = 0xF
 
+IOSWITCH_BG_SELECT = 0
+IOSWITCH_PG_SELECT = 1
+IOSWITCH_SMG_SELECT = 2
+
 INTF_MICROBLAZE_BIN = "arduino_intf.bin"
 
 
-PYNQZ1_DIO_SPECIFICATION = {'clock_mhz': 10, 'interface_width': 32,
+PYNQZ1_DIO_SPECIFICATION = {'clock_mhz': 10, 'interface_width': 20,
                             'monitor_width': 64,
                             'output_pin_map': {'D0': 0,
                                                'D1': 1,
@@ -124,7 +130,7 @@ PYNQZ1_DIO_SPECIFICATION = {'clock_mhz': 10, 'interface_width': 32,
                                               'A4': 38,
                                               'A5': 39,
                                               },
-                            'tri_state_map' : {'D0': 42,
+                            'tri_pin_map' : {'D0': 42,
                                                'D1': 43,
                                                'D2': 44,
                                                'D3': 45,
@@ -159,3 +165,13 @@ FSM_MAX_STATE_BITS = 9
 FSM_MAX_INPUT_BITS = 8
 FSM_MAX_STATE_INPUT_BITS = 13
 FSM_MAX_OUTPUT_BITS = 19
+
+# CData Width to Type Conversion
+BYTE_WIDTH_TO_CTYPE = {2: "char",
+                       4: "unsigned int",
+                       8: "unsigned long long"}
+
+# CData Width to Type Conversion
+BYTE_WIDTH_TO_NPTYPE = {2: np.uint16,
+                        4: np.uint32,
+                        8: np.uint64}
