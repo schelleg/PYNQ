@@ -33,8 +33,9 @@ __email__ = "pynq_support@xilinx.com"
 
 import re
 import numpy as np
-from .intf_const import INTF_MICROBLAZE_BIN
-from .intf import request_intf
+from .intf_const import INTF_MICROBLAZE_BIN, IOSWITCH_PG_SELECT, PYNQZ1_DIO_SPECIFICATION, CMD_CONFIG_PG, CMD_ARM_PG, \
+    CMD_RUN, CMD_STOP
+from .intf import request_intf,_INTF
 from .waveform import Waveform
 from .trace_analyzer import TraceAnalyzer
 
@@ -59,8 +60,9 @@ class PatternGenerator:
 
     """
 
-    def __init__(self, if_id, waveform_dict, stimulus_name='stimulus',
-                 analysis_name='analysis', analyzer_spec=None):
+    def __init__(self, intf_microblaze, waveform_dict, stimulus_name='stimulus',
+                 analysis_name='analysis', intf_spec=PYNQZ1_DIO_SPECIFICATION,
+                 use_analyzer=True, num_analyzer_samples=4096):
         """Return a new Arduino_PG object.
 
         Parameters
@@ -79,7 +81,15 @@ class PatternGenerator:
             Indicate whether to use the analyzer to capture the trace as well.
 
         """
-        self.intf = request_intf(if_id, INTF_MICROBLAZE_BIN)
+
+        if isinstance(intf_microblaze, _INTF):
+            self.intf = intf_microblaze
+        elif isinstance(intf_microblaze, int):
+            self.intf = request_intf(intf_microblaze, INTF_MICROBLAZE_BIN)
+        else:
+            raise TypeError("intf_microblaze has to be a intf._INTF or int type.")
+
+        self.intf_spec = intf_spec
         self.src_samples = None
         self.dst_samples = None
         self.waveform = Waveform(waveform_dict, stimulus_name=stimulus_name,
@@ -94,8 +104,8 @@ class PatternGenerator:
         self._wave_length_equal = self._is_wave_length_equal()
         self._longest_wave, self._max_wave_length = self._get_max_wave_length()
 
-        if analyzer_spec is not None:
-            self.analyzer = TraceAnalyzer(if_id, analyzer_spec)
+        if use_analyzer:
+            self.analyzer = TraceAnalyzer(self.intf, num_samples=num_analyzer_samples, trace_spec=intf_spec)
         else:
             self.analyzer = None
 
@@ -116,6 +126,15 @@ class PatternGenerator:
 
         """
         return self._longest_wave
+
+    def _config_ioswitch(self):
+
+        # gather which pins are being used
+        pg_pins = self.waveform.analysis_pins + self.waveform.stimulus_pins
+        ioswitch_pins = [self.intf_spec['output_pin_map'][pin] for pin in pg_pins]
+
+        # send list to intf processor for handling
+        self.intf.config_ioswitch(ioswitch_pins,IOSWITCH_PG_SELECT)
 
     def config(self, frequency_mhz=10):
         """Configure the PG with a single bit pattern.
@@ -145,18 +164,21 @@ class PatternGenerator:
         """
         self._make_same_wave_length()
         self.intf.clk.fclk1_mhz = frequency_mhz
+
+        self._config_ioswitch()
+
         direction_mask = 0xFFFFF
         num_samples = self._max_wave_length
-        temp_lanes = np.zeros((OUTPUT_SAMPLE_SIZE, num_samples),
+        temp_lanes = np.zeros((self.intf_spec['interface_width'], num_samples),
                               dtype=np.uint8)
         data = self.stimulus_waves[:]
         for index, wave in enumerate(data):
-            pin_number = OUTPUT_PIN_MAP[self.stimulus_pins[index]]
+            pin_number = self.intf_spec['output_pin_map'][self.stimulus_pins[index]]
             direction_mask &= (~(1 << pin_number))
-            temp_lanes[pin_number] = data[index] = _bitstring_to_int(
-                _wave_to_bitstring(wave))
+            temp_lanes[pin_number] = data[index] = self._bitstring_to_int(
+                self._wave_to_bitstring(wave))
         temp_samples = temp_lanes.T.copy()
-        self.src_samples = np.apply_along_axis(_int_to_sample, 1, temp_samples)
+        self.src_samples = np.apply_along_axis(self._int_to_sample, 1, temp_samples)
 
         # Allocate the source buffer
         src_addr = self.intf.allocate_buffer('src_buf', num_samples,
@@ -166,9 +188,13 @@ class PatternGenerator:
         for index, data in enumerate(self.src_samples):
             self.intf.buffers['src_buf'][index] = data
 
-        # Wait for the interface processor to return control
-        self.intf.write_control([direction_mask, src_addr, num_samples])
+        # Wait for the interface processor to return control (1 : multiple)
+        self.intf.write_control([direction_mask, src_addr, num_samples, 1])
         self.intf.write_command(CMD_CONFIG_PG)
+
+        # configure the tracebuffer
+        if self.analyzer is not None:
+            self.analyzer.config()
 
         # Free the DRAM pattern buffer - pattern now in BRAM
         self.intf.free_buffer('src_buf')
@@ -176,8 +202,15 @@ class PatternGenerator:
     def arm(self):
         self.intf.write_command(CMD_ARM_PG)
 
+        if self.analyzer is not None:
+            self.analyzer.arm()
+
     def run(self):
         self.intf.write_command(CMD_RUN)
+
+    def stop(self):
+        self.intf.write_command(CMD_STOP)
+
 
     def display(self):
 
@@ -186,8 +219,9 @@ class PatternGenerator:
             self.analysis_group = self.analyzer.analyze()
             self.waveform.update(self.analysis_name, self.analysis_group)
 
+        self.waveform.display()
 
-    def _wave_to_bitstring(wave):
+    def _wave_to_bitstring(self, wave):
         """Function to convert a pattern consisting of `l`, `h`, and dot to a
         sequence of `0` and `1`.
 
@@ -211,7 +245,7 @@ class PatternGenerator:
         return re.sub(wave_regex, delete_dots, wave)
 
 
-    def _bitstring_to_int(bitstring):
+    def _bitstring_to_int(self, bitstring):
         """Function to convert a bit string to integer list.
 
         For example, if the bit string is '0110', then the integer list will be
@@ -231,7 +265,7 @@ class PatternGenerator:
         return [int(i, 10) for i in list(bitstring)]
 
 
-    def _int_to_sample(bits):
+    def _int_to_sample(self, bits):
         """Function to convert a bit list into a multi-bit sample.
 
         Example: [1, 1, 1, 0] will be converted to 7, since the LSB of the sample
@@ -312,7 +346,7 @@ class PatternGenerator:
             len_diff = self._max_wave_length - len(wave)
             if len_diff:
                 self.stimulus_waves[index] = wave + wave[-1] * len_diff
-                print(f"WaveLane {self.stimulus_names[index]} extended to " +
-                      f"{self._max_wave_length} tokens to match " +
-                      f"{self._longest_wave}, " +
-                      f"the longest WaveLane in the group.")
+                # print(f"WaveLane {self.stimulus_names[index]} extended to " +
+                #       f"{self._max_wave_length} tokens to match " +
+                #       f"{self._longest_wave}, " +
+                #       f"the longest WaveLane in the group.")

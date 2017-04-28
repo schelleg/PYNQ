@@ -117,7 +117,7 @@ class _INTF:
         self.state = 'RUNNING'
         self.gpio.write(0)
 
-    def stop(self):
+    def reset(self):
         """Stop the Microblaze of the current interface.
 
         This method will update the status of the interface.
@@ -141,7 +141,7 @@ class _INTF:
         None
 
         """
-        self.stop()
+        self.reset()
         PL.load_ip_data(self.ip_name, self.mb_program)
         self.start()
 
@@ -198,6 +198,12 @@ class _INTF:
         while not (self.mmio.read(intf_const.MAILBOX_OFFSET +
                                   intf_const.MAILBOX_PY2DIF_CMD_OFFSET) == 0):
             pass
+
+    def run(self):
+        self.write_command(intf_const.CMD_RUN)
+
+    def stop(self):
+        self.write_command(intf_const.CMD_STOP)
 
     def allocate_buffer(self, name, num_samples, data_type="unsigned int"):
         """This method allocates the source or the destination buffers.
@@ -277,6 +283,11 @@ class _INTF:
         else:
             raise ValueError(f"No such buffer {name} allocated previously.")
 
+    def get_phy_address_frombuffer(self,name):
+        if name not in self.buffers:
+            raise ValueError(f"No such buffer {name} allocated previously.")
+        return self.buf_manager.cma_get_phy_addr(self.buffers[name])
+
     def reset_buffers(self):
         """This method resets all the buffers.
 
@@ -291,9 +302,6 @@ class _INTF:
 
     def config_ioswitch(self, ioswitch_pins, ioswitch_select_value):
 
-        print(f'entering config_ioswitch: {ioswitch_pins} {ioswitch_select_value}')
-
-
         # read switch config
         mailbox_addr = self.addr_base + intf_const.MAILBOX_OFFSET
         self.write_command(intf_const.CMD_READ_INTF_SWITCH_CONFIG)
@@ -302,24 +310,18 @@ class _INTF:
         # modify switch for requested entries
         for ix in ioswitch_pins:
             if ix < 10:
-                ioswitch_config[0][(ix * 2) + 1:ix * 2] = ioswitch_select_value
+                lsb = ix*2
+                msb = ix*2+1
+                ioswitch_config[0][msb:lsb] = ioswitch_select_value
             else:
-                ioswitch_config[1][((ix - 10) * 2) - 1:(ix - 10) * 2] = ioswitch_select_value
-
-        #
-        print(f'1. check the switch arguments in mailbox: {[hex(i) for i in self.read_results(2)]})')
-        print(f'1.                                       {[hex(i[31:0]) for i in ioswitch_config]}')
+                lsb = (ix-10)*2
+                msb = (ix-10)*2+1
+                ioswitch_config[1][msb:lsb] = ioswitch_select_value
 
         # write switch config
         self.write_command(intf_const.CMD_INTF_SWITCH_CONFIG)
 
-        # confirm the write
-        #read pins
-        self.write_command(intf_const.CMD_READ_INTF_SWITCH_CONFIG)
-        print(f'2. check the switch config before exit: {[hex(i) for i in self.read_results(2)]})')
-        print(f'2.                                      {[hex(i[31:0]) for i in ioswitch_config]}')
-
-def request_intf(if_id, mb_program):
+def request_intf(if_id, mb_program=intf_const.INTF_MICROBLAZE_BIN):
     """This is the interface to request an I/O Processor.
 
     It looks for active instances on the same interface ID, and prevents
@@ -382,11 +384,10 @@ def request_intf(if_id, mb_program):
     ip_state = ip_dict[dif]['state']
     gpio_uix = gpio_dict[rst_pin]['index']
 
-    if (ip_state is None) or \
-            (ip_state == (intf_const.BIN_LOCATION + mb_program)):
+    if (ip_state is None):
         # case 1
         return _INTF(dif, addr_base, addr_range, gpio_uix, mb_program)
     else:
         # case 2
-        raise LookupError('Another INTF program {} already running.'
+        raise LookupError('Another INTF program {} already running.  Please share the Microblaze instance.'
                           .format(ip_state))

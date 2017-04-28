@@ -31,7 +31,7 @@ import os
 import re
 import numpy as np
 from .intf_const import INTF_MICROBLAZE_BIN, CMD_CONFIG_TRACE, BYTE_WIDTH_TO_CTYPE, CMD_ARM_TRACE, BYTE_WIDTH_TO_NPTYPE
-from .intf import request_intf
+from .intf import request_intf, _INTF
 
 __author__ = "Yun Rock Qu"
 __copyright__ = "Copyright 2017, Xilinx"
@@ -73,7 +73,7 @@ class TraceAnalyzer:
 
     """
 
-    def __init__(self, if_id, num_samples=4096, trace_spec=None):
+    def __init__(self, intf_microblaze, num_samples=4096, trace_spec=None):
         """Return a new Arduino_PG object.
 
         Parameters
@@ -82,7 +82,14 @@ class TraceAnalyzer:
             The interface ID.
 
         """
-        self.intf = request_intf(if_id, INTF_MICROBLAZE_BIN)
+
+        if isinstance(intf_microblaze, _INTF):
+            self.intf = intf_microblaze
+        elif isinstance(intf_microblaze, int):
+            self.intf = request_intf(intf_microblaze, INTF_MICROBLAZE_BIN)
+        else:
+            raise TypeError("intf_microblaze has to be a intf._INTF or int type.")
+
         self.trace_spec = trace_spec
         self.num_samples = num_samples
 
@@ -92,21 +99,24 @@ class TraceAnalyzer:
         trace_bit_width = self.trace_spec['monitor_width']
         trace_byte_width = round(trace_bit_width / 8)
         dt = np.dtype(f'>u{trace_byte_width}')
-        buffer_phy_addr = self.intf.allocate_buffer('trace_buf', self.num_samples,
+
+        if 'trace_buf' in self.intf.buffers:
+            buffer_phy_addr = self.intf.get_phy_address_frombuffer('trace_buf')
+        else:
+            buffer_phy_addr = self.intf.allocate_buffer('trace_buf', self.num_samples,
                                              data_type=BYTE_WIDTH_TO_CTYPE[trace_byte_width])
 
-
-        self.intf.write_control([buffer_phy_addr])
+        self.intf.write_control([buffer_phy_addr,self.num_samples,0,0])
         self.intf.write_command(CMD_CONFIG_TRACE)
 
     def arm(self):
         self.intf.write_command(CMD_ARM_TRACE)
 
     def run(self):
-        self.intf.write_command(CMD_RUN)
+        self.intf.run()
 
     def stop(self):
-        self.intf.write_command(CMD_STOP)
+        self.intf.stop()
 
     def analyze(self, trace_spec=None):
         """Analyze the captured pattern.

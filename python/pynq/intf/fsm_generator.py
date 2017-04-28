@@ -41,7 +41,7 @@ from .intf_const import FSM_MAX_OUTPUT_BITS
 from .intf_const import INTF_MICROBLAZE_BIN
 from .intf_const import PYNQZ1_DIO_SPECIFICATION
 from .intf_const import CMD_CONFIG_SMG,CMD_ARM_SMG,CMD_RUN,IOSWITCH_SMG_SELECT,CMD_STOP
-from .intf import request_intf
+from .intf import request_intf, _INTF
 from .trace_analyzer import TraceAnalyzer
 from .waveform import Waveform
 
@@ -117,7 +117,7 @@ class FSMGenerator:
 
     """
 
-    def __init__(self, if_id, fsm_spec=None,
+    def __init__(self, intf_microblaze, fsm_spec=None,
                  intf_spec=PYNQZ1_DIO_SPECIFICATION, use_analyzer=True, use_state_bits=False, num_analyzer_samples=4096):
         """Initialize the FSM generator class.
 
@@ -152,9 +152,13 @@ class FSMGenerator:
             Whether to check the state bits in the final output pins.
 
         """
+        if isinstance(intf_microblaze, _INTF):
+            self.intf = intf_microblaze
+        elif isinstance(intf_microblaze, int):
+            self.intf = request_intf(intf_microblaze, INTF_MICROBLAZE_BIN)
+        else:
+            raise TypeError("intf_microblaze has to be a intf._INTF or int type.")
 
-        self.if_id = if_id
-        self.intf = request_intf(if_id, INTF_MICROBLAZE_BIN)
         self.intf_spec = intf_spec
         self.num_input_bits = 0
         self.num_outputs = 0
@@ -177,16 +181,16 @@ class FSMGenerator:
         self._bram_data = np.zeros(2 ** FSM_BRAM_ADDR_WIDTH, dtype=np.uint32)
 
         if use_analyzer:
-            self.analyzer = TraceAnalyzer(if_id,num_samples=num_analyzer_samples, trace_spec=intf_spec)
+            self.analyzer = TraceAnalyzer(self.intf,num_samples=num_analyzer_samples, trace_spec=intf_spec)
         else:
             self.analyzer = None
 
         if fsm_spec:
-            self.fsm_spec = self._parse_fsm_spec(fsm_spec, use_state_bits)
+            self.fsm_spec = self.parse_fsm_spec(fsm_spec, use_state_bits)
         else:
             self.fsm_spec = None
 
-    def _parse_fsm_spec(self, fsm_spec_in, use_state_bits):
+    def parse_fsm_spec(self, fsm_spec_in, use_state_bits):
         """Parse a given FSM specification.
 
         This method can be called during initialization, or by users.
@@ -267,7 +271,7 @@ class FSMGenerator:
                 _, current_state, _, old_output = row
                 if old_output:
                     current_state_code = self._state_names2codes[current_state]
-                    new_output = ''.join(merge_to_length(
+                    new_output = ''.join(self._merge_to_length(
                                             list(old_output),
                                             list(current_state_code),
                                             20 - self.num_input_bits))
@@ -539,7 +543,7 @@ class FSMGenerator:
         self.intf.write_command(CMD_STOP)
 
 
-    def start(self):
+    def run(self):
         """Start generating patterns or capturing the trace only.
 
         If there are existing FSM running on Microblaze, this method will
