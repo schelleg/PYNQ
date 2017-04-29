@@ -76,7 +76,7 @@ class BooleanGenerator:
 
     """
 
-    def __init__(self, intf_microblaze, expr=None, intf_spec=PYNQZ1_DIO_SPECIFICATION, use_analyzer = True, num_analyzer_samples = 4096):
+    def __init__(self, intf_microblaze, expr=None, intf_spec=PYNQZ1_DIO_SPECIFICATION, use_analyzer = True, num_analyzer_samples = 16):
         """Return a new Arduino_CFG object.
 
         For ARDUINO, the available input pins are data pins (D0-D13, A0-A5),
@@ -136,14 +136,13 @@ class BooleanGenerator:
         self.output_pin = None
         self.input_pins = None
 
-
-        if expr is not None:
-            self.config(expr)
-
         if use_analyzer is not None:
             self.analyzer = TraceAnalyzer(self.intf, num_samples=num_analyzer_samples, trace_spec=intf_spec)
         else:
             self.analyzer = None
+
+        if expr is not None:
+            self.config(expr)
 
 
     def _config_ioswitch(self):
@@ -195,30 +194,20 @@ class BooleanGenerator:
         self.input_pins = re.sub("\W+", " ", expr_in).strip().split(' ')
         input_pins_with_dontcares = self.input_pins[:]
 
-
-        print(f"input_pins {self.input_pins}")
-
         # need 5 inputs to a CFGLUT - any unspecified inputs will be don't cares
         for i in range(len(self.input_pins),5):
             expr_in = f'({expr_in} & X{i})|({expr_in} & ~X{i})'
             input_pins_with_dontcares.append(f'X{i}')
 
-        print(f"{input_pins_with_dontcares} {expr_in} ")
-
-
         # map to truth table
         p0, p1, p2, p3, p4 = map(exprvar, input_pins_with_dontcares)
         expr_p = expr_in
-
-        print(f"{p0} {p1} {p2} {p3} {p4} {expr_p}")
 
         # Replace pin names with p* in order
         for orig_name,p_name in zip(input_pins_with_dontcares, [f'p{i}' for i in range(5)]):
             expr_p = expr_p.replace(orig_name, p_name)
 
         truth_table = expr2truthtable(eval(expr_p))
-
-        print(f'truth_table {truth_table}')
 
         # parse truth table to send
         truth_list = str(truth_table).split("\n")
@@ -233,32 +222,31 @@ class BooleanGenerator:
         mailbox_addr = self.intf.addr_base + MAILBOX_OFFSET
         mailbox_regs = [Register(addr) for addr in range(mailbox_addr,mailbox_addr+4*64,4)]
         self.intf.write_command(CMD_READ_CFG_DIRECTION)
-        print(f" pre enables {mailbox_regs[0][31:0]}")
-        bg_bitenables = mailbox_regs[0]
+        bg_bitenables = mailbox_regs[0][31:0]
 
-        # generate the input select, the truth table, and bit enable
+        # generate the input selects based on truth table and bit enables
+        truth_table_inputs = [str(inp) for inp in truth_table.inputs]
         for i in range(5):
             lsb=i*5
             msb=(i+1)*5-1
-            if input_pins_with_dontcares[i] in self.input_pins:
-                input_pin_ix = self.intf_spec['output_pin_map'][input_pins_with_dontcares[i]]
+            if truth_table_inputs[i] in self.input_pins:
+                input_pin_ix = self.intf_spec['output_pin_map'][truth_table_inputs[i]]
             else:
                 input_pin_ix = 0x1f
             mailbox_regs[output_pin_num*2][msb:lsb] = input_pin_ix
+
         mailbox_regs[output_pin_num * 2 + 1][31:0] = truth_num
-        mailbox_regs[48][31:0] = 0xffffffff & ~(1 << output_pin_num)
-        #mailbox_regs[48] = bg_bitenables & ~(1 << output_pin_num)
+        mailbox_regs[48][31:0] = bg_bitenables
+        mailbox_regs[48][output_pin_num] = 0
+
+        mailbox_regs[49][31:0] = 0
         mailbox_regs[49][output_pin_num] = 1
 
-        print("Config words")
-        print(f"{mailbox_regs[output_pin_num*2]}")
-        print(f"{mailbox_regs[output_pin_num * 2 + 1]}")
-        print(f"{mailbox_regs[48]}")
-        print(f"{bg_bitenables}")
-
-        print(f"{mailbox_regs[49]}")
-
-
+        # print("--- Config words")
+        # print(f"--- mailbox_regs[{output_pin_num * 2}] {mailbox_regs[output_pin_num*2]}")
+        # print(f"--- mailbox_regs[{output_pin_num * 2 + 1}] {mailbox_regs[output_pin_num * 2 + 1]}")
+        # print(f"--- mailbox_regs[48] {mailbox_regs[48]}")
+        # print(f"--- mailbox_regs[49] {mailbox_regs[49]}")
 
         # construct the command word
         self.intf.write_command(CMD_CONFIG_CFG)
@@ -274,6 +262,7 @@ class BooleanGenerator:
             self.analyzer.arm()
 
     def run(self):
+        self.arm()
         self.intf.write_command(CMD_RUN)
 
     def stop(self):
