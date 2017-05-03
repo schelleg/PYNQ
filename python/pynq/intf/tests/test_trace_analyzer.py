@@ -27,18 +27,43 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Constants
-from . import intf_const
-from .intf_const import *
 
-# Interface modules
-from .intf import request_intf
-from .waveform import Waveform
-from .boolean_generator import BooleanGenerator
-from .pattern_generator import PatternGenerator
-from .trace_analyzer import TraceAnalyzer
-from .fsm_generator import FSMGenerator
+import pytest
+from pynq.intf.intf_const import PYNQZ1_DIO_SPECIFICATION
+from pynq.intf import TraceAnalyzer
+
 
 __author__ = "Yun Rock Qu"
-__copyright__ = "Copyright 2017, Xilinx"
+__copyright__ = "Copyright 2016, Xilinx"
 __email__ = "pynq_support@xilinx.com"
+
+
+@pytest.mark.run(order=44)
+def test_trace_analyzer():
+    """Test for the TraceAnalyzer class.
+
+    The loop back data tests will be conducted for pattern generator and 
+    FSM generator, hence this test only checks basic properties, attributes,
+    etc. for the trace analyzer.
+
+    """
+    if_id = 3
+    intf_spec = PYNQZ1_DIO_SPECIFICATION
+    analyzer = TraceAnalyzer(if_id, trace_spec=intf_spec)
+
+    analyzer.config()
+    assert 'trace_buf' in analyzer.intf.buffers, \
+        'trace_buf is not allocated before use.'
+
+    analyzer.arm()
+    analyzer.run()
+    analyzer.stop()
+    analyzer.analyze()
+    assert analyzer.samples is not None, \
+        'raw samples are empty in the trace analyzer.'
+    assert 'trace_buf' not in analyzer.intf.buffers, \
+        'trace_buf is not freed after use.'
+
+
+
+

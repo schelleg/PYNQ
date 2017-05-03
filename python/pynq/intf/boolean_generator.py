@@ -33,7 +33,9 @@ import numpy as np
 from pyeda.inter import exprvar
 from pyeda.inter import expr2truthtable
 from pynq import Register
-from .intf_const import INTF_MICROBLAZE_BIN, PYNQZ1_DIO_SPECIFICATION,CMD_READ_CFG_DIRECTION,MAILBOX_OFFSET,CMD_CONFIG_CFG, CMD_ARM_CFG, CMD_RUN, CMD_STOP,IOSWITCH_BG_SELECT
+from .intf_const import INTF_MICROBLAZE_BIN, PYNQZ1_DIO_SPECIFICATION, \
+    CMD_READ_CFG_DIRECTION, MAILBOX_OFFSET, CMD_CONFIG_CFG, \
+    CMD_ARM_CFG, CMD_RUN, CMD_STOP, IOSWITCH_BG_SELECT
 from .intf import request_intf, _INTF
 from .trace_analyzer import TraceAnalyzer
 from .waveform import Waveform
@@ -43,60 +45,45 @@ __copyright__ = "Copyright 2017, Xilinx"
 __email__ = "pynq_support@xilinx.com"
 
 
-# IN_PINS = [['D0', 'D1', 'D2', 'D3'],
-#            ['D5', 'D6', 'D7', 'D8'],
-#            ['D10', 'D11', 'D12', 'D13'],
-#            ['A1', 'A2', 'A3', 'A4'],
-#            ['PB0', 'PB1', 'PB2', 'PB3']]
-# OUT_PINS = ['D4', 'D9', 'A0', 'A5']
-# LD_PINS = ['LD0', 'LD1', 'LD2', 'LD3', 'LD4', 'LD5']
-# ARDUINO_CFG_PROGRAM = "arduino_intf.bin"
-
-
 class BooleanGenerator:
     """Class for the Combinational Function Generator.
 
-    This class can implement any combinational function on user IO pins. A
-    typical function implemented for a bank of 5 pins can be 4-input and
-    1-output. However, by connecting pins across different banks, users can
-    implement more complex functions with more input/output pins.
+    This class can implement any combinational function on user IO pins. Since
+    each LUT5 takes 5 inputs, the basic function that users can implement is
+    5-input, 1-output boolean function. However, by concatenating multiple
+    LUT5 together, users can implement complex boolean functions.
+
+    There are 20 5-LUTs, so users can implement at most 20 basic boolean 
+    functions at a specific time.
 
     Attributes
     ----------
-    if_id : int
-        The interface ID (ARDUINO).
     intf : _INTF
         INTF instance used by Arduino_CFG class.
     expr : str
         The boolean expression in string format.
-    led : bool
-        Whether LED is used to indicate output.
-    verbose : bool
-        Whether to show verbose message to users.
+    intf_spec : dict
+        The interface specification.
+    waveform : Waveform
+        The waveform object that can be used to display the waveform.
+    input_pins : list
+        A list of input pins, each input pin being a string.
+    output_pin : str
+        An output pin in the format of string.
 
     """
 
-    def __init__(self, intf_microblaze, expr=None, intf_spec=PYNQZ1_DIO_SPECIFICATION, use_analyzer = True, num_analyzer_samples = 16):
+    def __init__(self, intf_microblaze, expr=None,
+                 intf_spec=PYNQZ1_DIO_SPECIFICATION, use_analyzer=True,
+                 num_analyzer_samples=16):
         """Return a new Arduino_CFG object.
+        
+        For ARDUINO, the available input pins are data pins D0 - D19,
+        and the onboard push buttons PB0 - PB3. 
+        
+        The available output pins can be D0-D19.
 
-        For ARDUINO, the available input pins are data pins (D0-D13, A0-A5),
-        the onboard push buttons (PB0-PB3). The available output pins are
-        D4, D9, A0, A5, and the onboard LEDs (LD0-LD5).
-
-        Bank 0:
-        input 0 - 3: D0 - D3; output: D4/LD0.
-
-        Bank 1:
-        input 0 - 3: D5 - D8; output: D9/LD1.
-
-        Bank 2:
-        input 0 - 3: D10 - D13; output: A0/LD2.
-
-        Bank 3:
-        input 0 - 3: A1 - A4; output: A5/LD3.
-
-        Bank 4:
-        input 0 - 3: PB0 - PB3; output: LD4
+        Note that D14 is A0, D15 is A1, ..., and D19 is A5 on the header.
 
         The input boolean expression can be of the following formats:
         (1) `D0 & D1 | D2`, or
@@ -105,21 +92,18 @@ class BooleanGenerator:
         If no input boolean expression is specified, the default function
         implemented is `D0 & D1 & D2 & D3`.
 
-        Note
-        ----
-        When LED is used as the output indicator, an LED on indicates the
-        corresponding output is logic high.
-
         Parameters
         ----------
-        if_id : int
-            The interface ID (ARDUINO).
+        intf_microblaze : _INTF/int
+            The interface object or interface ID.
         expr : str
-            The boolean expression in a string.
-        led : bool
-            Whether LED is used to indicate output; defaults to true.
-        verbose : bool
-            Whether to show verbose message to users.
+            A boolean expression to be implemented.
+        intf_spec : dict
+            The interface specification.
+        use_analyzer : bool
+            Whether to attach an analyzer to the boolean generator.
+        num_analyzer_samples : int
+            Number of analyzer samples to capture.
 
         """
 
@@ -128,7 +112,8 @@ class BooleanGenerator:
         elif isinstance(intf_microblaze, int):
             self.intf = request_intf(intf_microblaze, INTF_MICROBLAZE_BIN)
         else:
-            raise TypeError("intf_microblaze has to be a intf._INTF or int type.")
+            raise TypeError(
+                "intf_microblaze has to be a intf._INTF or int type.")
 
         self.expr = expr
         self.intf_spec = intf_spec
@@ -137,36 +122,39 @@ class BooleanGenerator:
         self.input_pins = None
 
         if use_analyzer is not None:
-            self.analyzer = TraceAnalyzer(self.intf, num_samples=num_analyzer_samples, trace_spec=intf_spec)
+            self.analyzer = TraceAnalyzer(
+                self.intf, num_samples=num_analyzer_samples,
+                trace_spec=intf_spec)
         else:
             self.analyzer = None
 
         if expr is not None:
             self.config(expr)
 
-
     def _config_ioswitch(self):
+        """Configure the IO switch.
 
+        Will only be used internally. The method collects the pins used and 
+        sends the list _INTF for handling.
+
+        """
         # gather which pins are being used
-        ioswitch_pins = [self.intf_spec['output_pin_map'][ins] for ins in self.input_pins]
+        ioswitch_pins = [self.intf_spec['output_pin_map'][ins]
+                         for ins in self.input_pins]
         ioswitch_pins.append(self.intf_spec['output_pin_map'][self.output_pin])
 
         # send list to intf processor for handling
-        self.intf.config_ioswitch(ioswitch_pins,IOSWITCH_BG_SELECT)
-
+        self.intf.config_ioswitch(ioswitch_pins, IOSWITCH_BG_SELECT)
 
     def config(self, expr):
-        """Configure the CFG with new boolean expression or LED indicator.
+        """Configure the CFG with new boolean expression.
 
-        Implements boolean function at specified IO pins with optional led
-        output.
+        Implements boolean function at specified IO pins.
 
         Parameters
         ----------
         expr : str
             The new boolean expression.
-        led : bool
-            Show boolean function output on onboard LED, defaults to true
 
         Returns
         -------
@@ -177,7 +165,8 @@ class BooleanGenerator:
             raise TypeError("Boolean expression has to be a string.")
 
         if "=" not in expr:
-            raise ValueError("Boolean expression must have form OUTPUT_PIN = Expression")
+            raise ValueError(
+                "Boolean expression must have form OUTPUT_PIN = Expression")
 
         self.expr = expr
 
@@ -194,8 +183,8 @@ class BooleanGenerator:
         self.input_pins = re.sub("\W+", " ", expr_in).strip().split(' ')
         input_pins_with_dontcares = self.input_pins[:]
 
-        # need 5 inputs to a CFGLUT - any unspecified inputs will be don't cares
-        for i in range(len(self.input_pins),5):
+        # need 5 inputs to CFGLUT - any unspecified inputs will be don't cares
+        for i in range(len(self.input_pins), 5):
             expr_in = f'({expr_in} & X{i})|({expr_in} & ~X{i})'
             input_pins_with_dontcares.append(f'X{i}')
 
@@ -203,9 +192,10 @@ class BooleanGenerator:
         p0, p1, p2, p3, p4 = map(exprvar, input_pins_with_dontcares)
         expr_p = expr_in
 
-        # Replace pin names with p* in order
-        for orig_name,p_name in zip(input_pins_with_dontcares, [f'p{i}' for i in range(5)]):
-            expr_p = expr_p.replace(orig_name, p_name)
+        # Use regular expression to match and replace whole word only
+        for orig_name, p_name in zip(input_pins_with_dontcares,
+                                     [f'p{i}' for i in range(5)]):
+            expr_p = re.sub(r"\b{}\b".format(orig_name), p_name, expr_p)
 
         truth_table = expr2truthtable(eval(expr_p))
 
@@ -220,20 +210,22 @@ class BooleanGenerator:
 
         # Get current BG bit enables
         mailbox_addr = self.intf.addr_base + MAILBOX_OFFSET
-        mailbox_regs = [Register(addr) for addr in range(mailbox_addr,mailbox_addr+4*64,4)]
+        mailbox_regs = [Register(addr) for addr in range(
+            mailbox_addr, mailbox_addr + 4 * 64, 4)]
         self.intf.write_command(CMD_READ_CFG_DIRECTION)
         bg_bitenables = mailbox_regs[0][31:0]
 
         # generate the input selects based on truth table and bit enables
         truth_table_inputs = [str(inp) for inp in truth_table.inputs]
         for i in range(5):
-            lsb=i*5
-            msb=(i+1)*5-1
+            lsb = i * 5
+            msb = (i + 1) * 5 - 1
             if truth_table_inputs[i] in self.input_pins:
-                input_pin_ix = self.intf_spec['output_pin_map'][truth_table_inputs[i]]
+                input_pin_ix = self.intf_spec['output_pin_map']\
+                    [truth_table_inputs[i]]
             else:
                 input_pin_ix = 0x1f
-            mailbox_regs[output_pin_num*2][msb:lsb] = input_pin_ix
+            mailbox_regs[output_pin_num * 2][msb:lsb] = input_pin_ix
 
         mailbox_regs[output_pin_num * 2 + 1][31:0] = truth_num
         mailbox_regs[48][31:0] = bg_bitenables
@@ -242,30 +234,38 @@ class BooleanGenerator:
         mailbox_regs[49][31:0] = 0
         mailbox_regs[49][output_pin_num] = 1
 
-        # print("--- Config words")
-        # print(f"--- mailbox_regs[{output_pin_num * 2}] {mailbox_regs[output_pin_num*2]}")
-        # print(f"--- mailbox_regs[{output_pin_num * 2 + 1}] {mailbox_regs[output_pin_num * 2 + 1]}")
-        # print(f"--- mailbox_regs[48] {mailbox_regs[48]}")
-        # print(f"--- mailbox_regs[49] {mailbox_regs[49]}")
-
         # construct the command word
         self.intf.write_command(CMD_CONFIG_CFG)
 
-        # configure the tracebuffer
+        # configure the trace analyzer
         if self.analyzer is not None:
             self.analyzer.config()
 
     def arm(self):
+        """Arm the boolean generator.
+
+        This method will prepare the boolean generator.
+
+        """
         self.intf.write_command(CMD_ARM_CFG)
 
         if self.analyzer is not None:
             self.analyzer.arm()
 
     def run(self):
-        self.arm()
+        """Run the boolean generation.
+
+        This method will start to run the boolean generation.
+
+        """
         self.intf.write_command(CMD_RUN)
 
     def stop(self):
+        """Stop the boolean generation.
+
+        This method will stop the currently running boolean generation.
+
+        """
         self.intf.write_command(CMD_STOP)
 
     def display(self):
@@ -274,29 +274,29 @@ class BooleanGenerator:
         A wavedrom waveform is shown with all inputs and outputs displayed.
 
         """
-        # setup waveform view - stimulus from input wires, response on output wires
+        # setup waveform view - stimulus from inputs, analysis on outputs
         waveform_dict = {'signal': [
             ['stimulus'],
-            ['response']],
+            ['analysis']],
             'foot': {'tick': 1},
-            'head': {'tick': 1, 'text': f'Boolean Logic Generator ({self.expr})'}}
+            'head': {'tick': 1,
+                     'text': f'Boolean Logic Generator ({self.expr})'}}
 
-        # append four inputs and one output to waveform view (name and label are identical here)
+        # Append four inputs and one output to waveform view
         for name in self.input_pins:
             waveform_dict['signal'][0].append({'name': name, 'pin': name})
 
         for name in [self.output_pin]:
             waveform_dict['signal'][1].append({'name': name, 'pin': name})
 
-        display_waveform = Waveform(waveform_dict, stimulus_name='stimulus',analysis_name='response')
+        display_waveform = Waveform(
+            waveform_dict, stimulus_name='stimulus', analysis_name='analysis')
 
         if self.analyzer is not None:
             analysis_group = self.analyzer.analyze()
             display_waveform.update('stimulus', analysis_group)
-            display_waveform.update('response', analysis_group)
+            display_waveform.update('analysis', analysis_group)
         else:
-            print("Trace disabled, please enable, rerun FSM, and run display().")
-
+            print("Trace disabled, please enable, rerun FSM and display().")
 
         display_waveform.display()
-
