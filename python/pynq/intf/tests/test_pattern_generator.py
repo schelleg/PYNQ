@@ -139,5 +139,6 @@ def test_pattern_generator():
         exception_raised = True
     assert exception_raised, 'Should raise exception for display().'
 
+    pg.intf.reset_buffers()
     del pg, pg0
     ol.reset()

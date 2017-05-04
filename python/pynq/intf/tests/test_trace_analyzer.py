@@ -64,10 +64,10 @@ def test_trace_analyzer():
     analyzer.analyze()
     assert analyzer.samples is not None, \
         'raw samples are empty in the trace analyzer.'
+    analyzer.stop()
+    analyzer.reset()
     assert 'trace_buf' not in analyzer.intf.buffers, \
         'trace_buf is not freed after use.'
-    analyzer.stop()
-
     del analyzer
     ol.reset()
 

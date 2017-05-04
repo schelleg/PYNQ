@@ -82,6 +82,7 @@ def test_bool_func_1():
     assert exception_raised, 'Should raise exception for display().'
 
     bool_generator.stop()
+    bool_generator.analyzer.reset()
     del bool_generator, bool_generator0
 
 
@@ -144,6 +145,7 @@ def test_bool_func_2():
         assert eval(expr), f"Boolean generator fails for {fx[i]}."
 
     for bg in bgs:
+        bg.intf.reset_buffers()
         del bg
     ol.reset()
 

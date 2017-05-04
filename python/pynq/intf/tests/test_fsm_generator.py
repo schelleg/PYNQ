@@ -237,5 +237,8 @@ def test_fsm_generator():
         exception_raised = True
     assert exception_raised, 'Should raise exception for display().'
 
+    fsm_0.intf.reset_buffers()
+    fsm_1.intf.reset_buffers()
+    fsm_2.intf.reset_buffers()
     del fsm_0, fsm_1, fsm_2
     ol.reset()

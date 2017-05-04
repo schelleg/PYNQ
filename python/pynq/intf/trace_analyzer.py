@@ -146,10 +146,22 @@ class TraceAnalyzer:
     def stop(self):
         """Stop the pattern analysis.
         
-        This method will send the stop comamnd to the intf Microblaze.
+        This method will send the stop command to the intf Microblaze.
         
         """
         self.intf.stop()
+
+    def reset(self):
+        """Free the trace buffer after use.
+
+        Most of the time, users want to keep the trace buffer alive in order
+        to continuously dump data into it; this method is a standalone method
+        to free that buffer after use. 
+        
+        This method has to be called separately (in rare cases).
+
+        """
+        self.intf.free_buffer('trace_buf')
 
     def analyze(self, trace_spec=None):
         """Analyze the captured pattern.
@@ -203,7 +215,6 @@ class TraceAnalyzer:
             num_samples,
             self.trace_spec['monitor_width']).T[::-1]
 
-        self.intf.free_buffer('trace_buf')
         wavelanes = list()
         for pin_label in self.trace_spec['input_pin_map']:
             output_lane = temp_lanes[
