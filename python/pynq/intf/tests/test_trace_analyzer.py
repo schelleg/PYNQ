@@ -29,6 +29,7 @@
 
 
 import pytest
+from pynq import Overlay
 from pynq.intf.intf_const import PYNQZ1_DIO_SPECIFICATION
 from pynq.intf import TraceAnalyzer
 
@@ -36,6 +37,9 @@ from pynq.intf import TraceAnalyzer
 __author__ = "Yun Rock Qu"
 __copyright__ = "Copyright 2016, Xilinx"
 __email__ = "pynq_support@xilinx.com"
+
+
+ol = Overlay('interface.bit')
 
 
 @pytest.mark.run(order=44)
@@ -57,12 +61,15 @@ def test_trace_analyzer():
 
     analyzer.arm()
     analyzer.run()
-    analyzer.stop()
     analyzer.analyze()
     assert analyzer.samples is not None, \
         'raw samples are empty in the trace analyzer.'
     assert 'trace_buf' not in analyzer.intf.buffers, \
         'trace_buf is not freed after use.'
+    analyzer.stop()
+
+    del analyzer
+    ol.reset()
 
 
 

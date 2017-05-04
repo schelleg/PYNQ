@@ -769,10 +769,6 @@ class FSMGenerator:
         """
         self.intf.write_command(CMD_STOP)
 
-        if self.analyzer:
-            analysis_group = self.analyzer.analyze()
-            self.waveform.update('analysis', analysis_group)
-
     def run(self):
         """Start generating patterns.
 
@@ -828,7 +824,10 @@ class FSMGenerator:
         javascripts will be copied into the current directory.
 
         """
-        if self.analyzer is None:
+        if self.analyzer:
+            analysis_group = self.analyzer.analyze()
+            self.waveform.update('analysis', analysis_group)
+        else:
             raise ValueError("Trace disabled, please enable and rerun.")
         self.waveform.display()
 

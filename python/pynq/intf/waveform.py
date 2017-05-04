@@ -203,7 +203,7 @@ class Waveform:
 
         """
         for group in self.waveform_dict['signal']:
-            if group[0] == group_name:
+            if group and (group[0] == group_name):
                 return group[1:]
         raise ValueError("WaveLane group {} not found.".format(group_name))
 
@@ -474,7 +474,7 @@ class Waveform:
         pin_to_name = {}
         update = [group_name]
         for group in self.waveform_dict['signal']:
-            if group[0] == group_name:
+            if group and (group[0] == group_name):
                 for wavelane in group[1:]:
                     name, pin = wavelane['name'], wavelane['pin']
                     pin_to_name[pin] = name
@@ -491,5 +491,5 @@ class Waveform:
             raise ValueError("WaveLane group {} not found.".format(group_name))
 
         for index, group in enumerate(self.waveform_dict['signal']):
-            if group[0] == group_name:
+            if group and (group[0] == group_name):
                 self.waveform_dict['signal'][index] = update

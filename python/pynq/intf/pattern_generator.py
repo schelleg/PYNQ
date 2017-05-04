@@ -303,10 +303,6 @@ class PatternGenerator:
         """
         self.intf.write_command(CMD_STOP)
 
-        if self.analyzer:
-            self.analysis_group = self.analyzer.analyze()
-            self.waveform.update(self.analysis_name, self.analysis_group)
-
     def display(self):
         """Display the waveform in Jupyter notebook.
 
@@ -314,7 +310,10 @@ class PatternGenerator:
         time, javascripts will be copied into the current directory. 
 
         """
-        if self.analyzer is None:
+        if self.analyzer:
+            self.analysis_group = self.analyzer.analyze()
+            self.waveform.update(self.analysis_name, self.analysis_group)
+        else:
             raise ValueError("Trace disabled, please enable and rerun.")
         self.waveform.display()
 

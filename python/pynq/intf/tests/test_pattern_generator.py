@@ -109,9 +109,8 @@ def test_pattern_generator():
         'src_buf is not freed after use.'
     pg.arm()
     pg.run()
-    sleep(0.5)
-    pg.stop()
     pg.display()
+    pg.stop()
     loopback_2 = pg.waveform.waveform_dict
 
     list1 = list2 = list3 = list()

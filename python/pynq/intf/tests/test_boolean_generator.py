@@ -29,6 +29,8 @@
 
 
 from random import sample
+from copy import deepcopy
+import re
 import pytest
 from pynq import Overlay
 from pynq.tests.util import user_answer_yes
@@ -50,25 +52,37 @@ def test_bool_func_1():
     """Test for the BooleanGenerator class.
 
     The first test will test configurations when all 5 pins of a LUT are 
-    specified.
+    specified. Users need to manually check the output.
 
     """
     if_id = 3
     pin_dict = PYNQZ1_DIO_SPECIFICATION['output_pin_map']
-    first_6_pins = [k for k in sorted(pin_dict.keys())[:6]]
-    out_pin = first_6_pins[0]
-    in_pins = first_6_pins[1:6]
+    first_6_pins = [k for k in list(pin_dict.keys())[:6]]
+    out_pin = first_6_pins[5]
+    in_pins = first_6_pins[0:5]
     or_expr = out_pin + '=' + ('|'.join(in_pins))
-    bool_generator = BooleanGenerator(if_id, expr=or_expr)
+    bool_generator = BooleanGenerator(if_id)
+    bool_generator.config(or_expr)
     bool_generator.arm()
     bool_generator.run()
+    bool_generator.display()
     print(f'\nConnect all of {in_pins} to GND ...')
     assert user_answer_yes(f"{out_pin} outputs logic low?"), \
         "Boolean configurator fails to show logic low."
     print(f'Connect any of {in_pins} to 3V3 ...')
     assert user_answer_yes(f"{out_pin} outputs logic high?"), \
         "Boolean configurator fails to show logic high."
-    del bool_generator
+
+    bool_generator0 = BooleanGenerator(if_id, use_analyzer=False)
+    exception_raised = False
+    try:
+        bool_generator0.display()
+    except ValueError:
+        exception_raised = True
+    assert exception_raised, 'Should raise exception for display().'
+
+    bool_generator.stop()
+    del bool_generator, bool_generator0
 
 
 @pytest.mark.run(order=46)
@@ -80,31 +94,56 @@ def test_bool_func_2():
     
     For simplicity, pins D0 - D4 will be used as input pins, while D5 - D9
     will be selected as output pins.
+    
+    This is an automatic test so no user interaction is needed.
 
     """
     if_id = 3
     pin_dict = PYNQZ1_DIO_SPECIFICATION['output_pin_map']
-    microblaze_intf = request_intf(3)
-    first_10_pins = [k for k in sorted(pin_dict.keys())[:10]]
-    out_pins = first_10_pins[0:5]
-    in_pins = first_10_pins[5:10]
+    microblaze_intf = request_intf(if_id)
+    first_10_pins = [k for k in list(pin_dict.keys())[:10]]
+    in_pins = first_10_pins[0:5]
+    out_pins = first_10_pins[5:10]
     fx = list()
     for i in range(5):
         fx.append(out_pins[i] + '=' + ('&'.join(sample(in_pins,i+1))))
 
     print(f'\nConnect randomly {in_pins} to 3V3 or GND.')
-    bgs = [BooleanGenerator(microblaze_intf, f) for f in fx]
+    bgs = [BooleanGenerator(microblaze_intf) for _ in range(5)]
 
     # Arm all the boolean generator and run them
-    for bg in bgs:
-        bg.arm()
-    microblaze_intf.run()
+    for i in range(5):
+        bgs[i].config(fx[i])
+        bgs[i].arm()
+        bgs[i].run()
+        bgs[i].display()
+        bgs[i].stop()
+        wavelanes_in = bgs[i].waveform.waveform_dict['signal'][0][1:]
+        wavelanes_out = bgs[i].waveform.waveform_dict['signal'][-1][1:]
+        expr = deepcopy(fx[i])
+        for wavelane in wavelanes_in:
+            if 'h' == wavelane['wave'][0]:
+                str_replace = '1'
+            elif 'l' == wavelane['wave'][0]:
+                str_replace = '0'
+            else:
+                raise ValueError("Unrecognizable pattern captured.")
+            expr = re.sub(r"\b{}\b".format(wavelane['name']),
+                          str_replace, expr)
 
-    for index in range(len(fx)):
-        assert user_answer_yes(f"{fx[index]} correct?"), \
-            f"Boolean generator fails to show {fx[index]}."
+        wavelane = wavelanes_out[0]
+        if 'h' == wavelane['wave'][0]:
+            str_replace = '1'
+        elif 'l' == wavelane['wave'][0]:
+            str_replace = '0'
+        else:
+            raise ValueError("Unrecognizable pattern captured.")
+        expr = re.sub(r"\b{}\b".format(wavelane['name']),
+                      str_replace, expr)
+        expr = expr.replace('=', '==')
+        assert eval(expr), f"Boolean generator fails for {fx[i]}."
 
-    # Delete all the boolean generator
-    microblaze_intf.stop()
     for bg in bgs:
         del bg
+    ol.reset()
+

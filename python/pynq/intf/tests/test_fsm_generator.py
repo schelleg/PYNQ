@@ -35,6 +35,7 @@ from pynq import Overlay
 from pynq.intf.pattern_generator import bitstring_to_int
 from pynq.intf.pattern_generator import wave_to_bitstring
 from pynq.intf import FSMGenerator
+from pynq.intf.intf_const import PYNQZ1_DIO_SPECIFICATION
 
 
 __author__ = "Yun Rock Qu"
@@ -56,25 +57,19 @@ def test_fsm_generator():
     fsm_1 will test a minimum number of 16 samples.
     
     fsm_2 will test the case when no analyzer is specified.
-    
-    fsm_3 will test the case of 0 state.
-    
-    fsm_4 will test the case of 1 state.
-    
-    fsm_5 will test the case of a maximum of 512 states.
-    
-    fsm_6 will test the case of 19 inputs and 1 output.
-    
-    fsm_7 will test the case of 1 input and 19 outputs.
 
     """
     if_id = 3
+    pin_dict = PYNQZ1_DIO_SPECIFICATION['output_pin_map']
+    first_3_pins = [k for k in list(pin_dict.keys())[:3]]
+    out = first_3_pins[0]
+    rst, dir = first_3_pins[1:3]
     max_num_samples = 4096
     min_num_samples = 16
     test_string1 = test_string2 = test_string3 = \
         test_string4 = test_string5 = ''
-    fsm_spec = {'inputs': [('rst', 'D0'), ('direction', 'D1')],
-                'outputs': [('test', 'D2')],
+    fsm_spec = {'inputs': [('rst', rst), ('direction', dir)],
+                'outputs': [('test', out)],
                 'states': ['S0', 'S1', 'S2', 'S3'],
                 'transitions': [['00', 'S0', 'S1', '0'],
                                 ['01', 'S0', 'S3', '0'],
@@ -90,7 +85,7 @@ def test_fsm_generator():
                        num_analyzer_samples=max_num_samples)
 
     # Start the FSM generator to generate pattern
-    print("\nConnect D0 to GND, and D1 to 3V3 on Arduino header.")
+    print(f"\nConnect {rst} to GND, and {dir} to 3V3.")
     input("Hit enter after done ...")
 
     fsm_0.config(frequency_mhz=10)
@@ -99,8 +94,8 @@ def test_fsm_generator():
     fsm_0.arm()
     fsm_0.run()
     sleep(0.5)
-    fsm_0.stop()
     fsm_0.display()
+    fsm_0.stop()
 
     for wavegroup in fsm_0.waveform.waveform_dict['signal']:
         if wavegroup[0] == 'analysis':
@@ -127,8 +122,8 @@ def test_fsm_generator():
     fsm_0.arm()
     fsm_0.run()
     sleep(0.5)
-    fsm_0.stop()
     fsm_0.display()
+    fsm_0.stop()
 
     for wavegroup in fsm_0.waveform.waveform_dict['signal']:
         if wavegroup[0] == 'analysis':
@@ -148,7 +143,7 @@ def test_fsm_generator():
     assert matched, 'Analysis not matching the generated pattern.'
 
     # Recapture, using state bits
-    print("Connect both D0 and D1 to GND on Arduino header.")
+    print(f"Connect both {rst} and {dir} to GND on Arduino header.")
     input("Hit enter after done ...")
     fsm_1 = FSMGenerator(if_id, fsm_spec,
                          use_analyzer=True,
@@ -158,8 +153,8 @@ def test_fsm_generator():
     fsm_1.arm()
     fsm_1.run()
     sleep(0.5)
-    fsm_1.stop()
     fsm_1.display()
+    fsm_1.stop()
 
     for wavegroup in fsm_1.waveform.waveform_dict['signal']:
         if wavegroup[0] == 'analysis':
@@ -200,8 +195,8 @@ def test_fsm_generator():
     fsm_1.arm()
     fsm_1.run()
     sleep(0.5)
-    fsm_1.stop()
     fsm_1.display()
+    fsm_1.stop()
 
     for wavegroup in fsm_1.waveform.waveform_dict['signal']:
         if wavegroup[0] == 'analysis':

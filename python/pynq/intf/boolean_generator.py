@@ -73,9 +73,9 @@ class BooleanGenerator:
 
     """
 
-    def __init__(self, intf_microblaze, expr=None,
-                 intf_spec=PYNQZ1_DIO_SPECIFICATION, use_analyzer=True,
-                 num_analyzer_samples=16):
+    def __init__(self, intf_microblaze,
+                 intf_spec=PYNQZ1_DIO_SPECIFICATION,
+                 use_analyzer=True, num_analyzer_samples=16):
         """Return a new Arduino_CFG object.
         
         For ARDUINO, the available input pins are data pins D0 - D19,
@@ -96,8 +96,6 @@ class BooleanGenerator:
         ----------
         intf_microblaze : _INTF/int
             The interface object or interface ID.
-        expr : str
-            A boolean expression to be implemented.
         intf_spec : dict
             The interface specification.
         use_analyzer : bool
@@ -115,21 +113,18 @@ class BooleanGenerator:
             raise TypeError(
                 "intf_microblaze has to be a intf._INTF or int type.")
 
-        self.expr = expr
+        self.expr = None
         self.intf_spec = intf_spec
-        self.waveform = None
         self.output_pin = None
         self.input_pins = None
+        self.waveform = None
 
-        if use_analyzer is not None:
+        if use_analyzer:
             self.analyzer = TraceAnalyzer(
                 self.intf, num_samples=num_analyzer_samples,
                 trace_spec=intf_spec)
         else:
             self.analyzer = None
-
-        if expr is not None:
-            self.config(expr)
 
     def _config_ioswitch(self):
         """Configure the IO switch.
@@ -237,6 +232,24 @@ class BooleanGenerator:
         # construct the command word
         self.intf.write_command(CMD_CONFIG_CFG)
 
+        # setup waveform view - stimulus from inputs, analysis on outputs
+        waveform_dict = {'signal': [
+                ['stimulus'],
+                {},
+                ['analysis']],
+                'foot': {'tick': 1},
+                'head': {'tick': 1,
+                         'text': f'Boolean Logic Generator ({self.expr})'}}
+
+        # Append four inputs and one output to waveform view
+        for name in self.input_pins:
+            waveform_dict['signal'][0].append({'name': name, 'pin': name})
+        for name in [self.output_pin]:
+            waveform_dict['signal'][-1].append({'name': name, 'pin': name})
+        self.waveform = Waveform(waveform_dict,
+                                 stimulus_name='stimulus',
+                                 analysis_name='analysis')
+
         # configure the trace analyzer
         if self.analyzer is not None:
             self.analyzer.config()
@@ -274,29 +287,12 @@ class BooleanGenerator:
         A wavedrom waveform is shown with all inputs and outputs displayed.
 
         """
-        # setup waveform view - stimulus from inputs, analysis on outputs
-        waveform_dict = {'signal': [
-            ['stimulus'],
-            ['analysis']],
-            'foot': {'tick': 1},
-            'head': {'tick': 1,
-                     'text': f'Boolean Logic Generator ({self.expr})'}}
-
-        # Append four inputs and one output to waveform view
-        for name in self.input_pins:
-            waveform_dict['signal'][0].append({'name': name, 'pin': name})
-
-        for name in [self.output_pin]:
-            waveform_dict['signal'][1].append({'name': name, 'pin': name})
-
-        display_waveform = Waveform(
-            waveform_dict, stimulus_name='stimulus', analysis_name='analysis')
-
         if self.analyzer is not None:
             analysis_group = self.analyzer.analyze()
-            display_waveform.update('stimulus', analysis_group)
-            display_waveform.update('analysis', analysis_group)
+            self.waveform.update('stimulus', analysis_group)
+            self.waveform.update('analysis', analysis_group)
         else:
-            print("Trace disabled, please enable, rerun FSM and display().")
+            raise ValueError("Trace disabled, please enable and rerun.")
 
-        display_waveform.display()
+        self.waveform.display()
+
