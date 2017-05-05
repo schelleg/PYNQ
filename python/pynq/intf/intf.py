@@ -175,7 +175,8 @@ class _INTF:
             list of results read from mailbox
 
         """
-        return [self.mmio.read(intf_const.MAILBOX_OFFSET + i*4) for i in range(num_words)]
+        return [self.mmio.read(intf_const.MAILBOX_OFFSET + i * 4)
+                for i in range(num_words)]
 
     def write_command(self, command):
         """This method writes the commands to the Microblaze.
@@ -200,9 +201,21 @@ class _INTF:
             pass
 
     def run(self):
+        """Run the command.
+        
+        Send the run command to the Microblaze, and wait for the Microblaze
+        to return control.
+
+        """
         self.write_command(intf_const.CMD_RUN)
 
     def stop(self):
+        """Run the command.
+
+        Send the stop command to the Microblaze, and wait for the Microblaze
+        to return control.
+
+        """
         self.write_command(intf_const.CMD_STOP)
 
     def allocate_buffer(self, name, num_samples, data_type="unsigned int"):
@@ -283,7 +296,23 @@ class _INTF:
         else:
             raise ValueError(f"No such buffer {name} allocated previously.")
 
-    def get_phy_address_frombuffer(self,name):
+    def get_phy_addr_from_buffer(self, name):
+        """Get the physical address from the buffer.
+
+        The method takes the name of the buffer as input, and returns the 
+        physical address.
+        
+        Parameters
+        ----------
+        name : str
+            The name of the buffer.
+        
+        Returns
+        -------
+        int
+            The physical address of the buffer.
+
+        """
         if name not in self.buffers:
             raise ValueError(f"No such buffer {name} allocated previously.")
         return self.buf_manager.cma_get_phy_addr(self.buffers[name])
@@ -301,25 +330,38 @@ class _INTF:
         self.buffers = dict()
 
     def config_ioswitch(self, ioswitch_pins, ioswitch_select_value):
-
+        """Configure the IO switch.
+        
+        This method configures the IO switch based on the input parameters.
+        
+        Parameters
+        ----------
+        ioswitch_pins : list
+            List of pins to be configured.
+        ioswitch_select_value : int
+            Function selection parameter.
+        
+        """
         # read switch config
         mailbox_addr = self.addr_base + intf_const.MAILBOX_OFFSET
         self.write_command(intf_const.CMD_READ_INTF_SWITCH_CONFIG)
-        ioswitch_config = [Register(addr) for addr in [mailbox_addr, mailbox_addr + 4]]
+        ioswitch_config = [Register(addr)
+                           for addr in [mailbox_addr, mailbox_addr + 4]]
 
         # modify switch for requested entries
         for ix in ioswitch_pins:
             if ix < 10:
-                lsb = ix*2
-                msb = ix*2+1
+                lsb = ix * 2
+                msb = ix * 2 + 1
                 ioswitch_config[0][msb:lsb] = ioswitch_select_value
             else:
-                lsb = (ix-10)*2
-                msb = (ix-10)*2+1
+                lsb = (ix - 10) * 2
+                msb = (ix - 10) * 2 + 1
                 ioswitch_config[1][msb:lsb] = ioswitch_select_value
 
         # write switch config
         self.write_command(intf_const.CMD_INTF_SWITCH_CONFIG)
+
 
 def request_intf(if_id, mb_program=intf_const.INTF_MICROBLAZE_BIN):
     """This is the interface to request an I/O Processor.
@@ -384,10 +426,11 @@ def request_intf(if_id, mb_program=intf_const.INTF_MICROBLAZE_BIN):
     ip_state = ip_dict[dif]['state']
     gpio_uix = gpio_dict[rst_pin]['index']
 
-    if (ip_state is None):
+    if (ip_state is None) or \
+        (ip_state == (intf_const.BIN_LOCATION + mb_program)):
         # case 1
         return _INTF(dif, addr_base, addr_range, gpio_uix, mb_program)
     else:
         # case 2
-        raise LookupError('Another INTF program {} already running.  Please share the Microblaze instance.'
+        raise LookupError('Another INTF program {} already running. '
                           .format(ip_state))

@@ -27,16 +27,18 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__author__      = "Giuseppe Natale, Yun Rock Qu"
-__copyright__   = "Copyright 2016, Xilinx"
-__email__       = "pynq_support@xilinx.com"
-
 
 from setuptools import setup, Extension, find_packages
 import shutil
 import subprocess
 import sys
 import os
+
+
+__author__      = "Giuseppe Natale, Yun Rock Qu"
+__copyright__   = "Copyright 2016, Xilinx"
+__email__       = "pynq_support@xilinx.com"
+
 
 # Video source files
 _video_src = ['pynq/_pynq/_video/_video.c', 'pynq/_pynq/_video/_capture.c', 
@@ -92,7 +94,7 @@ if len(sys.argv) > 1 and sys.argv[1] == 'install':
     run_make("pynq/_pynq/_audio/", "pynq/drivers/" ,"libaudio.so")
     
 setup(  name='pynq',
-        version='1.4',
+        version='1.5',
         description='Python for Xilinx package',
         author='XilinxPythonProject',
         author_email='pynq_support@xilinx.com',
