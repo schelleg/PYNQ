@@ -60,39 +60,39 @@ def _verify_wave_tokens(wave_lane):
 
 
 def draw_wavedrom(data):
-        """Display the waveform using the Wavedrom package.
+    """Display the waveform using the Wavedrom package.
 
-        This method requires 2 javascript files to be copied locally. Users
-        can call this method directly to draw any wavedrom data.
-        
-        Example usage:
+    This method requires 2 javascript files to be copied locally. Users
+    can call this method directly to draw any wavedrom data.
 
-        >>> a = {
-            'signal': [
-                {'name': 'clk', 'wave': 'p.....|...'},
-                {'name': 'dat', 'wave': 'x.345x|=.x', 
-                                'data': ['head', 'body', 'tail', 'data']},
-                {'name': 'req', 'wave': '0.1..0|1.0'},
-                {},
-                {'name': 'ack', 'wave': '1.....|01.'}
-            ]}
-        >>> draw_wavedrom(a)
+    Example usage:
 
-        """
-        if not (os.path.isfile('./js/WaveDrom.js') and
-                os.path.isfile('./js/WaveDromSkin.js')):
-            if os.system("cp -rf " +
-                         os.path.dirname(os.path.realpath(__file__)) +
-                         '/js ./'):
-                raise RuntimeError('Cannot copy WaveDrom javascripts.')
+    >>> a = {
+        'signal': [
+            {'name': 'clk', 'wave': 'p.....|...'},
+            {'name': 'dat', 'wave': 'x.345x|=.x', 
+                            'data': ['head', 'body', 'tail', 'data']},
+            {'name': 'req', 'wave': '0.1..0|1.0'},
+            {},
+            {'name': 'ack', 'wave': '1.....|01.'}
+        ]}
+    >>> draw_wavedrom(a)
 
-        htmldata = '<script type="WaveDrom">' + json.dumps(data) + '</script>'
-        IPython.core.display.display_html(IPython.core.display.HTML(htmldata))
-        jsdata = 'WaveDrom.ProcessAll();'
-        IPython.core.display.display_javascript(
-            IPython.core.display.Javascript(
-                data=jsdata,
-                lib=['files/js/WaveDrom.js', 'files/js/WaveDromSkin.js']))
+    """
+    if not (os.path.isfile('./js/WaveDrom.js') and
+            os.path.isfile('./js/WaveDromSkin.js')):
+        if os.system("cp -rf " +
+                     os.path.dirname(os.path.realpath(__file__)) +
+                     '/js ./'):
+            raise RuntimeError('Cannot copy WaveDrom javascripts.')
+
+    htmldata = '<script type="WaveDrom">' + json.dumps(data) + '</script>'
+    IPython.core.display.display_html(IPython.core.display.HTML(htmldata))
+    jsdata = 'WaveDrom.ProcessAll();'
+    IPython.core.display.display_javascript(
+        IPython.core.display.Javascript(
+            data=jsdata,
+            lib=['files/js/WaveDrom.js', 'files/js/WaveDromSkin.js']))
 
 
 class Waveform:
@@ -170,9 +170,9 @@ class Waveform:
 
         if intf_spec is not None:
             if self.stimulus is not None:
-                self._verify_lanes(stimulus_name,intf_spec)
+                self._verify_lanes(stimulus_name, intf_spec)
             if self.analysis is not None:
-                self._verify_lanes(analysis_name,intf_spec)
+                self._verify_lanes(analysis_name, intf_spec)
 
     def display(self):
         """Display the waveform using the Wavedrom package.
@@ -203,7 +203,7 @@ class Waveform:
 
         """
         for group in self.waveform_dict['signal']:
-            if group[0] == group_name:
+            if group and (group[0] == group_name):
                 return group[1:]
         raise ValueError("WaveLane group {} not found.".format(group_name))
 
@@ -474,7 +474,7 @@ class Waveform:
         pin_to_name = {}
         update = [group_name]
         for group in self.waveform_dict['signal']:
-            if group[0] == group_name:
+            if group and (group[0] == group_name):
                 for wavelane in group[1:]:
                     name, pin = wavelane['name'], wavelane['pin']
                     pin_to_name[pin] = name
@@ -491,5 +491,5 @@ class Waveform:
             raise ValueError("WaveLane group {} not found.".format(group_name))
 
         for index, group in enumerate(self.waveform_dict['signal']):
-            if group[0] == group_name:
+            if group and (group[0] == group_name):
                 self.waveform_dict['signal'][index] = update

@@ -77,7 +77,8 @@ IOSWITCH_SMG_SELECT = 2
 INTF_MICROBLAZE_BIN = "arduino_intf.bin"
 
 
-PYNQZ1_DIO_SPECIFICATION = {'clock_mhz': 10, 'interface_width': 20,
+PYNQZ1_DIO_SPECIFICATION = {'clock_mhz': 10,
+                            'interface_width': 20,
                             'monitor_width': 64,
                             'output_pin_map': {'D0': 0,
                                                'D1': 1,
@@ -133,34 +134,34 @@ PYNQZ1_DIO_SPECIFICATION = {'clock_mhz': 10, 'interface_width': 20,
                                               'A4': 38,
                                               'A5': 39,
                                               },
-                            'tri_pin_map' : {'D0': 42,
-                                               'D1': 43,
-                                               'D2': 44,
-                                               'D3': 45,
-                                               'D4': 46,
-                                               'D5': 47,
-                                               'D6': 48,
-                                               'D7': 49,
-                                               'D8': 50,
-                                               'D9': 51,
-                                               'D10': 52,
-                                               'D11': 53,
-                                               'D12': 54,
-                                               'D13': 55,
-                                               'D14': 56,
-                                               'D15': 57,
-                                               'D16': 58,
-                                               'D17': 59,
-                                               'D18': 60,
-                                               'D19': 61,
-                                               'A0': 56,
-                                               'A1': 57,
-                                               'A2': 58,
-                                               'A3': 59,
-                                               'A4': 60,
-                                               'A5': 61,
-                                               }
-}
+                            'tri_pin_map': {'D0': 42,
+                                             'D1': 43,
+                                            'D2': 44,
+                                            'D3': 45,
+                                            'D4': 46,
+                                            'D5': 47,
+                                            'D6': 48,
+                                            'D7': 49,
+                                            'D8': 50,
+                                            'D9': 51,
+                                            'D10': 52,
+                                            'D11': 53,
+                                            'D12': 54,
+                                            'D13': 55,
+                                            'D14': 56,
+                                            'D15': 57,
+                                            'D16': 58,
+                                            'D17': 59,
+                                            'D18': 60,
+                                            'D19': 61,
+                                            'A0': 56,
+                                            'A1': 57,
+                                            'A2': 58,
+                                            'A3': 59,
+                                            'A4': 60,
+                                            'A5': 61,
+                                            }
+                            }
 
 # FSM generator constants
 FSM_BRAM_ADDR_WIDTH = 13
@@ -170,11 +171,11 @@ FSM_MAX_STATE_INPUT_BITS = 13
 FSM_MAX_OUTPUT_BITS = 19
 
 # CData Width to Type Conversion
-BYTE_WIDTH_TO_CTYPE = {2: "char",
-                       4: "unsigned int",
+BYTE_WIDTH_TO_CTYPE = {4: "unsigned int",
                        8: "unsigned long long"}
 
 # CData Width to Type Conversion
-BYTE_WIDTH_TO_NPTYPE = {2: np.uint16,
+BYTE_WIDTH_TO_NPTYPE = {1: np.uint8,
+                        2: np.uint16,
                         4: np.uint32,
                         8: np.uint64}
