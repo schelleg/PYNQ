@@ -34,15 +34,25 @@ import numpy as np
 import pygraphviz as pgv
 from IPython.display import Image, display
 from .intf_const import FSM_BRAM_ADDR_WIDTH
+from .intf_const import MAX_NUM_TRACE_SAMPLES
+from .intf_const import FSM_MIN_STATE_BITS
 from .intf_const import FSM_MAX_STATE_BITS
+from .intf_const import FSM_MIN_NUM_STATES
+from .intf_const import FSM_MAX_NUM_STATES
+from .intf_const import FSM_MIN_INPUT_BITS
 from .intf_const import FSM_MAX_INPUT_BITS
 from .intf_const import FSM_MAX_STATE_INPUT_BITS
 from .intf_const import FSM_MAX_OUTPUT_BITS
+from .intf_const import FSM_MIN_OUTPUT_BITS
 from .intf_const import INTF_MICROBLAZE_BIN
 from .intf_const import PYNQZ1_DIO_SPECIFICATION
-from .intf_const import CMD_CONFIG_SMG, CMD_ARM_SMG, CMD_RUN, \
-    IOSWITCH_SMG_SELECT, CMD_STOP
-from .intf import request_intf, _INTF
+from .intf_const import CMD_CONFIG_SMG
+from .intf_const import CMD_ARM_SMG
+from .intf_const import CMD_RUN
+from .intf_const import CMD_STOP
+from .intf_const import IOSWITCH_SMG_SELECT
+from .intf import request_intf
+from .intf import _INTF
 from .trace_analyzer import TraceAnalyzer
 from .waveform import Waveform
 
@@ -73,7 +83,7 @@ def check_pins(fsm_spec, key, intf_spec):
                 f"{i[1]} not in output pin map - please check fsm_spec.")
 
 
-def check_num_bits(num_bits, label, maximum):
+def check_num_bits(num_bits, label, minimum=0, maximum=32):
     """Check whether the number of bits are still in a valid range.
 
     This method will raise an exception if `num_bits` is out of range.
@@ -84,13 +94,15 @@ def check_num_bits(num_bits, label, maximum):
         The number of bits of a specific field.
     label : str
         The label of the field.
+    minimum : int
+        The minimum number of bits allowed in that field.
     maximum : int
         The maximum number of bits allowed in that field.
 
     """
-    if num_bits > maximum:
-        raise ValueError(f'{label} used more than the maximum number ' +
-                         f'({maximum}) of bits allowed.')
+    if not minimum <= num_bits <= maximum:
+        raise ValueError(f'{num_bits} bits used for {label}, out of range: ' +
+                         f'[{minimum}, {maximum}].')
 
 
 def check_moore(num_states, num_outputs):
@@ -108,9 +120,8 @@ def check_moore(num_states, num_outputs):
 
     """
     if num_states < num_outputs:
-        raise ValueError("Specified FSM is not Moore: " +
-                         "{} states but {} outputs.".format(num_states,
-                                                            num_outputs))
+        raise ValueError(f"Specified FSM is not Moore: " +
+                         f"{num_states} states but {num_outputs} outputs.")
 
 
 def check_duplicate(fsm_spec, key):
@@ -339,7 +350,7 @@ class FSMGenerator:
     def __init__(self, intf_microblaze, fsm_spec=None,
                  intf_spec=PYNQZ1_DIO_SPECIFICATION,
                  use_analyzer=True, use_state_bits=False,
-                 num_analyzer_samples=4096):
+                 num_analyzer_samples=MAX_NUM_TRACE_SAMPLES):
         """Initialize the FSM generator class.
 
         Users can specify the `fsm_spec` when instantiating the object, or
@@ -451,12 +462,16 @@ class FSMGenerator:
         self.input_pins = [i[1] for i in fsm_spec['inputs']]
         self.output_pins = [i[1] for i in fsm_spec['outputs']]
 
-        check_num_bits(self.num_input_bits, 'inputs', FSM_MAX_INPUT_BITS)
-        check_num_bits(self.num_output_bits,
-                             'outputs', FSM_MAX_OUTPUT_BITS)
-        check_num_bits(self.num_state_bits, 'states', FSM_MAX_STATE_BITS)
+        check_num_bits(self.num_input_bits, 'inputs',
+                       FSM_MIN_INPUT_BITS, FSM_MAX_INPUT_BITS)
+        check_num_bits(self.num_output_bits, 'outputs',
+                       FSM_MIN_OUTPUT_BITS, FSM_MAX_OUTPUT_BITS)
+        check_num_bits(self.num_state_bits, 'states',
+                       FSM_MIN_STATE_BITS, FSM_MAX_STATE_BITS)
         check_num_bits(self.num_input_bits + self.num_state_bits,
-                             'states and inputs', FSM_MAX_STATE_INPUT_BITS)
+                       'states and inputs',
+                       FSM_MIN_INPUT_BITS + FSM_MIN_STATE_BITS,
+                       FSM_MAX_STATE_INPUT_BITS)
         check_moore(self.num_states, self.num_outputs)
         check_pins(fsm_spec, 'inputs', self.intf_spec)
         check_pins(fsm_spec, 'outputs', self.intf_spec)

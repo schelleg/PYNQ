@@ -33,9 +33,15 @@ import numpy as np
 from pyeda.inter import exprvar
 from pyeda.inter import expr2truthtable
 from pynq import Register
-from .intf_const import INTF_MICROBLAZE_BIN, PYNQZ1_DIO_SPECIFICATION, \
-    CMD_READ_CFG_DIRECTION, MAILBOX_OFFSET, CMD_CONFIG_CFG, \
-    CMD_ARM_CFG, CMD_RUN, CMD_STOP, IOSWITCH_BG_SELECT
+from .intf_const import INTF_MICROBLAZE_BIN
+from .intf_const import PYNQZ1_DIO_SPECIFICATION
+from .intf_const import CMD_READ_CFG_DIRECTION
+from .intf_const import MAILBOX_OFFSET
+from .intf_const import CMD_CONFIG_CFG
+from .intf_const import CMD_ARM_CFG
+from .intf_const import CMD_RUN
+from .intf_const import CMD_STOP
+from .intf_const import IOSWITCH_BG_SELECT
 from .intf import request_intf, _INTF
 from .trace_analyzer import TraceAnalyzer
 from .waveform import Waveform
@@ -176,6 +182,8 @@ class BooleanGenerator:
 
         # parse the used pins
         self.input_pins = re.sub("\W+", " ", expr_in).strip().split(' ')
+        if not 1<=len(self.input_pins)<=5:
+            raise ValueError("Expect 1 - 5 inputs for each CFGLUT.")
         input_pins_with_dontcares = self.input_pins[:]
 
         # need 5 inputs to CFGLUT - any unspecified inputs will be don't cares
