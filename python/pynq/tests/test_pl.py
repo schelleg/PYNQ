@@ -28,6 +28,7 @@
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+import os
 import pytest
 from pynq import general_const
 from pynq import Overlay
@@ -261,7 +262,7 @@ def test_overlay3():
         f'FCLK3 frequency not correct after downloading {bitfile2}.'
 
 
-@pytest.mark.run(order=49)
+@pytest.mark.run(order=56)
 def test_end():
     """Wrapping up by changing the overlay back.
     
@@ -288,6 +289,10 @@ def test_end():
         f'FCLK2 frequency not correct after downloading {bitfile1}.'
     assert Clocks.fclk3_mhz == bitfile1_fclk3_mhz, \
         f'FCLK3 frequency not correct after downloading {bitfile1}.'
+
+    # Clear the javascript files copied during tests
+    if os.system("rm -rf ./js"):
+        raise RuntimeError('Cannot remove WaveDrom javascripts.')
 
     del ol1
     del ol2
