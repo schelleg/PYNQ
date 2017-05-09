@@ -38,9 +38,12 @@ from pynq import Overlay
 from pynq.iop import iop
 from pynq.iop import iop_const
 from pynq.iop import DevMode
+from pynq.iop import PMOD_ID
+from pynq.iop import ARDUINO_ID
 
-global ol
+
 ol = Overlay("base.bit")
+
 
 @pytest.mark.run(order=14)
 def test_devmode():
@@ -50,12 +53,13 @@ def test_devmode():
     configurations. The returned objects should not be None.
     
     """
-    for iop_id in range(1,3):
+    for iop_id in PMOD_ID:
         assert DevMode(iop_id, iop_const.PMOD_SWCFG_IIC0_TOPROW) is not None
         assert DevMode(iop_id, iop_const.PMOD_SWCFG_IIC0_BOTROW) is not None
         assert DevMode(iop_id, iop_const.PMOD_SWCFG_DIOALL) is not None
     
     ol.reset()
+
 
 @pytest.mark.run(order=15)
 def test_devmode():
@@ -65,7 +69,7 @@ def test_devmode():
     from the mailbox. Test whether the write and the read are successful.
     
     """
-    for iop_id in range(1,3):
+    for iop_id in PMOD_ID:
         # Initiate the IOP
         iop = DevMode(iop_id, iop_const.PMOD_SWCFG_DIOALL)
         iop.start()
@@ -88,3 +92,4 @@ def test_devmode():
         assert iop.status()=="STOPPED"
         
     ol.reset()
+

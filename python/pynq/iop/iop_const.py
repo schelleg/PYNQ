@@ -185,6 +185,8 @@ ARDUINO_CFG_UART_ALLINPUT   = 0xffffffff
 PMODA = 1
 PMODB = 2
 ARDUINO = 3
+PMOD_ID = [PMODA,PMODB]
+ARDUINO_ID = [ARDUINO]
 
 # Stickit Pmod to grove pin mapping
 PMOD_GROVE_G1 = [0,4]

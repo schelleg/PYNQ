@@ -27,33 +27,10 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__author__      = "Yun Rock Qu"
-__copyright__   = "Copyright 2016, Xilinx"
-__email__       = "pynq_support@xilinx.com"
-
 
 # Constants
 from . import iop_const
-from .iop_const import PMODA
-from .iop_const import PMODB
-from .iop_const import ARDUINO
-from .iop_const import PMOD_GROVE_G1
-from .iop_const import PMOD_GROVE_G2
-from .iop_const import PMOD_GROVE_G3
-from .iop_const import PMOD_GROVE_G4
-from .iop_const import ARDUINO_GROVE_I2C
-from .iop_const import ARDUINO_GROVE_UART
-from .iop_const import ARDUINO_GROVE_G1
-from .iop_const import ARDUINO_GROVE_G2
-from .iop_const import ARDUINO_GROVE_G3
-from .iop_const import ARDUINO_GROVE_G4
-from .iop_const import ARDUINO_GROVE_G5
-from .iop_const import ARDUINO_GROVE_G6
-from .iop_const import ARDUINO_GROVE_G7
-from .iop_const import ARDUINO_GROVE_A1
-from .iop_const import ARDUINO_GROVE_A2
-from .iop_const import ARDUINO_GROVE_A3
-from .iop_const import ARDUINO_GROVE_A4
+from .iop_const import *
 
 # IOP
 from .iop import request_iop
@@ -88,3 +65,8 @@ from .grove_ledbar import Grove_LEDbar
 from .grove_tmp import Grove_TMP
 from .grove_light import Grove_Light
 from .grove_buzzer import Grove_Buzzer
+
+
+__author__      = "Yun Rock Qu"
+__copyright__   = "Copyright 2016, Xilinx"
+__email__       = "pynq_support@xilinx.com"

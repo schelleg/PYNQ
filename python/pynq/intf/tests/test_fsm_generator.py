@@ -32,19 +32,22 @@ from random import randint
 import numpy as np
 import pytest
 from pynq import Overlay
+from pynq.tests.util import user_answer_yes
+from pynq.tests.util import get_interface_id
 from pynq.intf.pattern_generator import bitstring_to_int
 from pynq.intf.pattern_generator import wave_to_bitstring
 from pynq.intf import FSMGenerator
-from pynq.intf.intf_const import PYNQZ1_DIO_SPECIFICATION
-from pynq.intf.intf_const import MAX_NUM_TRACE_SAMPLES
-from pynq.intf.intf_const import FSM_MIN_STATE_BITS
-from pynq.intf.intf_const import FSM_MAX_STATE_BITS
-from pynq.intf.intf_const import FSM_MIN_NUM_STATES
-from pynq.intf.intf_const import FSM_MAX_NUM_STATES
-from pynq.intf.intf_const import FSM_MIN_INPUT_BITS
-from pynq.intf.intf_const import FSM_MAX_INPUT_BITS
-from pynq.intf.intf_const import FSM_MAX_STATE_INPUT_BITS
-from pynq.intf.intf_const import FSM_MAX_OUTPUT_BITS
+from pynq.intf import INTERFACE_ID
+from pynq.intf import PYNQZ1_DIO_SPECIFICATION
+from pynq.intf import MAX_NUM_TRACE_SAMPLES
+from pynq.intf import FSM_MIN_STATE_BITS
+from pynq.intf import FSM_MAX_STATE_BITS
+from pynq.intf import FSM_MIN_NUM_STATES
+from pynq.intf import FSM_MAX_NUM_STATES
+from pynq.intf import FSM_MIN_INPUT_BITS
+from pynq.intf import FSM_MAX_INPUT_BITS
+from pynq.intf import FSM_MAX_STATE_INPUT_BITS
+from pynq.intf import FSM_MAX_OUTPUT_BITS
 
 
 __author__ = "Yun Rock Qu"
@@ -52,11 +55,14 @@ __copyright__ = "Copyright 2016, Xilinx"
 __email__ = "pynq_support@xilinx.com"
 
 
-ol = Overlay('interface.bit')
-if_id = 3
+flag = user_answer_yes("\nTest Finite State Machine (FSM) generators?")
+if flag:
+    if_id = get_interface_id('FSM generators', options=INTERFACE_ID)
+    ol = Overlay('interface.bit')
 
 
 @pytest.mark.run(order=52)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
 def test_fsm_generator_basic():
     """Test for the Finite State Machine Generator class.
 
@@ -251,6 +257,7 @@ def test_fsm_generator_basic():
 
 
 @pytest.mark.run(order=53)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
 def test_fsm_generator_states1():
     """Test for the Finite State Machine Generator class.
 
@@ -323,6 +330,7 @@ def test_fsm_generator_states1():
 
 
 @pytest.mark.run(order=54)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
 def test_fsm_generator_states2():
     """Test for the Finite State Machine Generator class.
 
@@ -392,6 +400,7 @@ def test_fsm_generator_states2():
 
 
 @pytest.mark.run(order=55)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
 def test_fsm_generator_maximum():
     """Test for the Finite State Machine Generator class.
 

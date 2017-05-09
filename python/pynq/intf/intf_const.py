@@ -37,6 +37,8 @@ import numpy as np
 
 # Microblaze constants
 BIN_LOCATION = os.path.dirname(os.path.realpath(__file__)) + "/"
+ARDUINO = 3
+INTERFACE_ID = [ARDUINO]
 
 # Interface mailbox constants
 MAILBOX_OFFSET = 0xF000

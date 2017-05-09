@@ -34,9 +34,11 @@ import re
 import pytest
 from pynq import Overlay
 from pynq.tests.util import user_answer_yes
+from pynq.tests.util import get_interface_id
 from pynq.intf import request_intf
 from pynq.intf import BooleanGenerator
-from pynq.intf.intf_const import PYNQZ1_DIO_SPECIFICATION
+from pynq.intf import INTERFACE_ID
+from pynq.intf import PYNQZ1_DIO_SPECIFICATION
 
 
 __author__ = "Yun Rock Qu"
@@ -44,11 +46,14 @@ __copyright__ = "Copyright 2016, Xilinx"
 __email__ = "pynq_support@xilinx.com"
 
 
-ol = Overlay('interface.bit')
-if_id = 3
+flag = user_answer_yes("\nTest boolean generators?")
+if flag:
+    if_id = get_interface_id('boolean generators', options=INTERFACE_ID)
+    ol = Overlay('interface.bit')
 
 
 @pytest.mark.run(order=45)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
 def test_bool_func_manual():
     """Test for the BooleanGenerator class.
 
@@ -56,6 +61,7 @@ def test_bool_func_manual():
     specified. Users need to manually check the output.
 
     """
+    input(f'\nDisconnect all the pins. Hit enter after done ...')
     pin_dict = PYNQZ1_DIO_SPECIFICATION['output_pin_map']
     first_6_pins = [k for k in list(pin_dict.keys())[:6]]
     out_pin = first_6_pins[5]
@@ -66,7 +72,7 @@ def test_bool_func_manual():
     bool_generator.arm()
     bool_generator.run()
     bool_generator.display()
-    print(f'\nConnect all of {in_pins} to GND ...')
+    print(f'Connect all of {in_pins} to GND ...')
     assert user_answer_yes(f"{out_pin} outputs logic low?"), \
         "Boolean configurator fails to show logic low."
     print(f'Connect any of {in_pins} to VCC ...')
@@ -87,6 +93,7 @@ def test_bool_func_manual():
 
 
 @pytest.mark.run(order=46)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
 def test_bool_func_auto():
     """Test for the BooleanGenerator class.
 
@@ -146,6 +153,7 @@ def test_bool_func_auto():
 
 
 @pytest.mark.run(order=47)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
 def test_bool_func_input():
     """Test for the BooleanGenerator class.
 
@@ -186,6 +194,7 @@ def test_bool_func_input():
 
 
 @pytest.mark.run(order=48)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
 def test_bool_func_output():
     """Test for the BooleanGenerator class.
 

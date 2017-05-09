@@ -27,44 +27,40 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__author__      = "Naveen Purushotham, Yun Rock Qu"
-__copyright__   = "Copyright 2016, Xilinx"
-__email__       = "pynq_support@xilinx.com"
-
 
 import pytest
 from pynq import Overlay
 from pynq.iop import PMODA
 from pynq.iop import PMODB
+from pynq.iop import PMOD_ID
 from pynq.iop import Pmod_TMP2
 from pynq.tests.util import user_answer_yes
-from pynq.tests.util import get_pmod_id
+from pynq.tests.util import get_interface_id
+
+
+__author__      = "Naveen Purushotham, Yun Rock Qu"
+__copyright__   = "Copyright 2016, Xilinx"
+__email__       = "pynq_support@xilinx.com"
+
 
 flag = user_answer_yes("\nPmod TMP2 attached to the board?")
 if flag:
-    global tmp2_id
-    
-    pmod_id = get_pmod_id('Pmod TMP2')
-    if pmod_id == 'A':
-        tmp2_id = PMODA
-    elif pmod_id == 'B':
-        tmp2_id = PMODB
-    else:
-        raise ValueError("Please type in A or B.")
+    tmp2_id = get_interface_id('Pmod TMP2', options=PMOD_ID)
+
 
 @pytest.mark.run(order=28)
 @pytest.mark.skipif(not flag, reason="need TMP2 attached in order to run")
-def test_readtemp():
+def test_read_temp():
     """Test for the TMP2 class.
     
     Reads the TMP2 and asks the user if the temperature is displayed.
     
     """
-    global tmp2
     tmp2 = Pmod_TMP2(tmp2_id)
+
     n = tmp2.read()
     print("\nCurrent temperature: {} C.".format(n))
     assert user_answer_yes("Reading in celsius displayed?")
-    
+
     del tmp2
-    
+

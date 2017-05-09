@@ -32,10 +32,13 @@ from random import randint
 from copy import deepcopy
 import pytest
 from pynq import Overlay
+from pynq.tests.util import user_answer_yes
+from pynq.tests.util import get_interface_id
 from pynq.intf import PatternGenerator
 from pynq.intf.pattern_generator import wave_to_bitstring
-from pynq.intf.intf_const import PYNQZ1_DIO_SPECIFICATION
-from pynq.intf.intf_const import MAX_NUM_PATTERN_SAMPLES
+from pynq.intf import INTERFACE_ID
+from pynq.intf import PYNQZ1_DIO_SPECIFICATION
+from pynq.intf import MAX_NUM_PATTERN_SAMPLES
 
 
 __author__ = "Yun Rock Qu"
@@ -43,11 +46,14 @@ __copyright__ = "Copyright 2016, Xilinx"
 __email__ = "pynq_support@xilinx.com"
 
 
-ol = Overlay('interface.bit')
-if_id = 3
+flag = user_answer_yes("\nTest pattern generators?")
+if flag:
+    if_id = get_interface_id('pattern generators', options=INTERFACE_ID)
+    ol = Overlay('interface.bit')
 
 
 @pytest.mark.run(order=49)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
 def test_pattern_generator_clk():
     """Test for the PatternGenerator class.
 
@@ -129,6 +135,7 @@ def test_pattern_generator_clk():
 
 
 @pytest.mark.run(order=50)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
 def test_pattern_generator_wave():
     """Test for the PatternGenerator class.
 
@@ -178,6 +185,7 @@ def test_pattern_generator_wave():
 
 
 @pytest.mark.run(order=51)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
 def test_pattern_generator_random():
     """Test for the PatternGenerator class.
 

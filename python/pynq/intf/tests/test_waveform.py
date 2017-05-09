@@ -32,7 +32,7 @@ import os
 from copy import deepcopy
 import pytest
 from pynq.intf import Waveform
-from pynq.intf.intf_const import PYNQZ1_DIO_SPECIFICATION
+from pynq.intf import PYNQZ1_DIO_SPECIFICATION
 
 
 __author__ = "Yun Rock Qu"

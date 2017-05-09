@@ -27,10 +27,6 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__author__      = "Yun Rock Qu"
-__copyright__   = "Copyright 2016, Xilinx"
-__email__       = "pynq_support@xilinx.com"
-
 
 from random import randint
 from time import sleep
@@ -38,30 +34,24 @@ import pytest
 from pynq import Overlay
 from pynq.iop import PMODA
 from pynq.iop import PMODB
+from pynq.iop import PMOD_ID
 from pynq.iop import Pmod_Cable
 from pynq.tests.util import user_answer_yes
-from pynq.tests.util import get_pmod_id
+from pynq.tests.util import get_interface_id
+
+
+__author__      = "Yun Rock Qu"
+__copyright__   = "Copyright 2016, Xilinx"
+__email__       = "pynq_support@xilinx.com"
+
 
 flag = user_answer_yes("\nTwo Pmod interfaces connected by a cable?")
 if flag:
-    global TX_PORT,RX_PORT
+    send_id = get_interface_id('sender', options=PMOD_ID)
+    recv_id = get_interface_id('receiver', options=PMOD_ID)
+    tx, rx = None, None
 
-    send_id = get_pmod_id('sender')
-    if send_id == 'A':
-        TX_PORT = PMODA
-    elif send_id == 'B':
-        TX_PORT = PMODB
-    else:
-        raise ValueError("Please type in A or B.")
 
-    recv_id = get_pmod_id('receiver')
-    if recv_id == 'A':
-        RX_PORT = PMODA
-    elif recv_id == 'B':
-        RX_PORT = PMODB
-    else:
-        raise ValueError("Please type in A or B.")
-    
 @pytest.mark.run(order=16) 
 @pytest.mark.skipif(not flag, reason="need Pmod cable connected to run")
 def test_cable_type():
@@ -78,11 +68,12 @@ def test_cable_type():
     
     """
     print('\nTesting Pmod IO cable...')
-    assert not TX_PORT == RX_PORT, \
+    assert not send_id == recv_id, \
         "The sender port cannot be the receiver port."
-    global tx,rx
-    tx = [Pmod_Cable(TX_PORT,k,'out','loopback') for k in range(8)]
-    rx = [Pmod_Cable(RX_PORT,k,'in','loopback') for k in range(8)]
+
+    global tx, rx
+    tx = [Pmod_Cable(send_id, k, 'out', 'loopback') for k in range(8)]
+    rx = [Pmod_Cable(recv_id, k, 'in', 'loopback') for k in range(8)]
     tx[0].write(0)
     tx[3].write(0)
     tx[4].write(1)
@@ -99,6 +90,7 @@ def test_cable_type():
     else:
         raise AssertionError("Cable unrecognizable.")
 
+
 @pytest.mark.run(order=17) 
 @pytest.mark.skipif(not flag, reason="need Pmod cable connected to run")
 def test_rshift1():
@@ -107,13 +99,12 @@ def test_rshift1():
     The sender will send patterns with the bit "1" right shifted each time.
     
     """
+    global tx, rx
     print('\nGenerating tests for right shifting a \"1\"...')
-    global tx,rx
-    
+
+    data1 = [1, 0, 0, 0, 0, 0, 0, 0]
     for i in range(8):
-        if i==0:
-            data1 = [1,0,0,0,0,0,0,0]
-        else:
+        if i!=0:
             data1 = data1[-1:]+data1[:-1]
         data2 = [0,0,0,0,0,0,0,0]
         tx[i].write(data1[i])
@@ -121,6 +112,7 @@ def test_rshift1():
         data2[i] = rx[i].read()
         assert data1==data2,\
             'Sent {} != received {} at Pin {}.'.format(data1,data2,i)
+
 
 @pytest.mark.run(order=18) 
 @pytest.mark.skipif(not flag, reason="need Pmod cable connected to run") 
@@ -130,13 +122,12 @@ def test_rshift0():
     The sender will send patterns with the bit "0" right shifted each time.
     
     """
+    global tx, rx
     print('\nGenerating tests for right shifting a \"0\"...')
-    global tx,rx
-    
+
+    data1 = [0, 1, 1, 1, 1, 1, 1, 1]
     for i in range(8):
-        if i==0:
-            data1 = [0,1,1,1,1,1,1,1]
-        else:
+        if i!=0:
             data1 = data1[-1:]+data1[:-1]
         data2 = [1,1,1,1,1,1,1,1]
         tx[i].write(data1[i])
@@ -144,6 +135,7 @@ def test_rshift0():
         data2[i] = rx[i].read()
         assert data1==data2,\
             'Sent {} != received {} at Pin {}.'.format(data1,data2,i) 
+
 
 @pytest.mark.run(order=19) 
 @pytest.mark.skipif(not flag, reason="need Pmod cable connected to run")
@@ -153,13 +145,12 @@ def test_lshift1():
     The sender will send patterns with the bit "1" left shifted each time.
     
     """
+    global tx, rx
     print('\nGenerating tests for left shifting a \"1\"...')
-    global tx,rx
-    
+
+    data1 = [0, 0, 0, 0, 0, 0, 0, 1]
     for i in range(8):
-        if i==0:
-            data1 = [0,0,0,0,0,0,0,1]
-        else:
+        if i!=0:
             data1 = data1[1:]+data1[:1]
         data2 = [0,0,0,0,0,0,0,0]
         tx[7-i].write(data1[7-i])
@@ -167,6 +158,7 @@ def test_lshift1():
         data2[7-i] = rx[7-i].read()
         assert data1==data2,\
             'Sent {} != received {} at Pin {}.'.format(data1,data2,7-i)
+
 
 @pytest.mark.run(order=20) 
 @pytest.mark.skipif(not flag, reason="need Pmod cable connected to run")
@@ -176,13 +168,12 @@ def test_lshift0():
     The sender will send patterns with the bit "0" left shifted each time.
     
     """
+    global tx, rx
     print('\nGenerating tests for left shifting a \"0\"...')
-    global tx,rx
-    
+
+    data1 = [1, 1, 1, 1, 1, 1, 1, 0]
     for i in range(8):
-        if i==0:
-            data1 = [1,1,1,1,1,1,1,0]
-        else:
+        if i!=0:
             data1 = data1[1:]+data1[:1]
         data2 = [1,1,1,1,1,1,1,1]
         tx[7-i].write(data1[7-i])
@@ -190,6 +181,7 @@ def test_lshift0():
         data2[7-i] = rx[7-i].read()
         assert data1==data2,\
             'Sent {} != received {} at Pin {}.'.format(data1,data2,7-i)
+
 
 @pytest.mark.run(order=21) 
 @pytest.mark.skipif(not flag, reason="need Pmod cable connected to run")
@@ -201,10 +193,10 @@ def test_random():
     in every iteration. This test may take a few seconds to finish.
     
     """
+    global tx, rx
     print('\nGenerating 100 random tests...')
-    global tx,rx
     
-    for i in range(100):     
+    for _ in range(100):
         data1=[0,0,0,0,0,0,0,0]
         data2=[1,1,1,1,1,1,1,1]
         for j in range(8):
@@ -213,6 +205,7 @@ def test_random():
             sleep(0.001) 
             data2[j] = rx[j].read()
         assert data1==data2,\
-             'Sent {} != received {} at Pin {}.'.format(data1,data2,j)
+             'Sent {} != received {}.'.format(data1,data2)
     
     del tx,rx
+

@@ -27,30 +27,26 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__author__      = "Giuseppe Natale, Yun Rock Qu"
-__copyright__   = "Copyright 2016, Xilinx"
-__email__       = "pynq_support@xilinx.com"
-
 
 import pytest
 from pynq import Overlay
 from pynq.iop import PMODA
 from pynq.iop import PMODB
+from pynq.iop import PMOD_ID
 from pynq.iop import Pmod_OLED
 from pynq.tests.util import user_answer_yes
-from pynq.tests.util import get_pmod_id
+from pynq.tests.util import get_interface_id
+
+
+__author__      = "Giuseppe Natale, Yun Rock Qu"
+__copyright__   = "Copyright 2016, Xilinx"
+__email__       = "pynq_support@xilinx.com"
+
 
 flag = user_answer_yes("\nPmod OLED attached to the board?")
 if flag:
-    global oled_id
-    
-    pmod_id = get_pmod_id('Pmod OLED')
-    if pmod_id == 'A':
-        oled_id = PMODA
-    elif pmod_id == 'B':
-        oled_id = PMODB
-    else:
-        raise ValueError("Please type in A or B.")
+    oled_id = get_interface_id('Pmod OLED', options=PMOD_ID)
+
 
 @pytest.mark.run(order=25)
 @pytest.mark.skipif(not flag, reason="need OLED attached in order to run")
@@ -62,9 +58,8 @@ def test_write_string():
     This test can be skipped.
     
     """
-    global oled
     oled = Pmod_OLED(oled_id)
-    
+
     oled.draw_line(0,0,255,0)
     oled.draw_line(0,2,255,2)
     oled.write('Welcome to PYNQ.',0,1)
@@ -73,7 +68,7 @@ def test_write_string():
 
     assert user_answer_yes("\nWelcome message shown on the OLED?")
     oled.clear()
-    assert user_answer_yes("OLED screen clear now?")      
-    
+    assert user_answer_yes("OLED screen clear now?")
+
     del oled
-    
+

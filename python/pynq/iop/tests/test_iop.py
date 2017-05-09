@@ -30,6 +30,8 @@
 import pytest
 from pynq import Overlay
 from pynq.iop import request_iop
+from pynq.iop import PMOD_ID
+from pynq.iop import ARDUINO_ID
 
 
 __author__ = "Giuseppe Natale, Yun Rock Qu"
@@ -48,7 +50,7 @@ def test_request_iop():
     This is a test for case 1 (for more information, please see request_iop).
     
     """
-    fixed_id = 1
+    fixed_id = (PMOD_ID + ARDUINO_ID)[0]
     exception_raised = False
     try:
         request_iop(fixed_id, 'mailbox.bin')
@@ -68,7 +70,7 @@ def test_request_iop_same():
     This is a test for case 1 (for more information, please see request_iop).
     
     """
-    fixed_id = 1
+    fixed_id = (PMOD_ID + ARDUINO_ID)[0]
     exception_raised = False
     request_iop(fixed_id, 'mailbox.bin')
     try:
@@ -89,8 +91,9 @@ def test_request_iop_conflict():
     This is a test for case 2 (for more information, please see request_iop).
     
     """
-    fixed_id = 1
+    fixed_id = (PMOD_ID + ARDUINO_ID)[0]
     request_iop(fixed_id, 'pmod_adc.bin')
     pytest.raises(LookupError, request_iop, fixed_id, 'pmod_dac.bin')
     
     ol.reset()
+

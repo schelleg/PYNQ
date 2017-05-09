@@ -30,8 +30,9 @@
 
 import pytest
 from pynq import Overlay
-from pynq.intf.intf_const import PYNQZ1_DIO_SPECIFICATION
-from pynq.intf.intf_const import MAX_NUM_TRACE_SAMPLES
+from pynq.intf import INTERFACE_ID
+from pynq.intf import PYNQZ1_DIO_SPECIFICATION
+from pynq.intf import MAX_NUM_TRACE_SAMPLES
 from pynq.intf import TraceAnalyzer
 
 
@@ -41,7 +42,7 @@ __email__ = "pynq_support@xilinx.com"
 
 
 ol = Overlay('interface.bit')
-if_id = 3
+if_id = INTERFACE_ID[0]
 
 
 @pytest.mark.run(order=44)
