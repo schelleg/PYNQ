@@ -12,7 +12,7 @@
 
 module interface_switch #(parameter SIZE = 20)
     (
-    input [1:0] sel,
+    input [2*SIZE-1:0] sel,
     input [SIZE-1:0] cfg2sw_data_o,
     input [SIZE-1:0] cfg2sw_tri_o,
     output [SIZE-1:0] sw2cfg_data_i,
@@ -39,7 +39,7 @@ module interface_switch #(parameter SIZE = 20)
         for (i=0; i < SIZE; i=i+1)
         begin: mux_data_o
             mux_4_to_1 mux_i(
-                .sel(sel), 
+                .sel(sel[2*i+1:2*i]), 
                 .a(cfg2sw_data_o[i]), 
                 .b(pg2sw_data_o[i]), 
                 .c(smg2sw_data_o[i]), 
@@ -52,7 +52,7 @@ module interface_switch #(parameter SIZE = 20)
         for (i=0; i < SIZE; i=i+1)
         begin: mux_tri_o
             mux_4_to_1 mux_i(
-                .sel(sel), 
+                .sel(sel[2*i+1:2*i]), 
                 .a(cfg2sw_tri_o[i]), 
                 .b(pg2sw_tri_o[i]), 
                 .c(smg2sw_tri_o[i]), 
