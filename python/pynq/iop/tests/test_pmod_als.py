@@ -27,31 +27,26 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__author__      = "Naveen Purushotham, Yun Rock Qu"
-__copyright__   = "Copyright 2016, Xilinx"
-__email__       = "pynq_support@xilinx.com"
-
 
 import pytest
 from time import sleep
 from pynq import Overlay
 from pynq.iop import PMODA
 from pynq.iop import PMODB
+from pynq.iop import PMOD_ID
 from pynq.iop import Pmod_ALS
 from pynq.tests.util import user_answer_yes
-from pynq.tests.util import get_pmod_id
+from pynq.tests.util import get_interface_id
+
+
+__author__      = "Naveen Purushotham, Yun Rock Qu"
+__copyright__   = "Copyright 2016, Xilinx"
+__email__       = "pynq_support@xilinx.com"
+
 
 flag = user_answer_yes("\nPmod ALS attached to the board?")
 if flag:
-    global als_id
-    
-    pmod_id = get_pmod_id('Pmod ALS')
-    if pmod_id == 'A':
-        als_id = PMODA
-    elif pmod_id == 'B':
-        als_id = PMODB
-    else:
-        raise ValueError("Please type in A or B.")
+    als_id = get_interface_id('Pmod ALS', options=PMOD_ID)
 
 
 @pytest.mark.run(order=29)  
@@ -63,7 +58,6 @@ def test_readlight():
     verify that a lower reading is displayed.
     
     """
-    global als
     als = Pmod_ALS(als_id)
     
     # Wait for the Pmod ALS to finish initialization

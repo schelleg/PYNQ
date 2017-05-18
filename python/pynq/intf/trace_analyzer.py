@@ -30,9 +30,14 @@
 import os
 import re
 import numpy as np
-from .intf_const import INTF_MICROBLAZE_BIN, CMD_CONFIG_TRACE, \
-    BYTE_WIDTH_TO_CTYPE, CMD_ARM_TRACE, BYTE_WIDTH_TO_NPTYPE
-from .intf import request_intf, _INTF
+from .intf_const import INTF_MICROBLAZE_BIN
+from .intf_const import CMD_CONFIG_TRACE
+from .intf_const import BYTE_WIDTH_TO_CTYPE
+from .intf_const import CMD_ARM_TRACE
+from .intf_const import BYTE_WIDTH_TO_NPTYPE
+from .intf_const import MAX_NUM_TRACE_SAMPLES
+from .intf import request_intf
+from .intf import _INTF
 
 __author__ = "Yun Rock Qu"
 __copyright__ = "Copyright 2017, Xilinx"
@@ -80,7 +85,8 @@ class TraceAnalyzer:
         The raw data samples expressed in numpy array.
 
     """
-    def __init__(self, intf_microblaze, num_samples=4096, trace_spec=None):
+    def __init__(self, intf_microblaze, num_samples=MAX_NUM_TRACE_SAMPLES,
+                 trace_spec=None):
         """Return a new Arduino_PG object.
 
         Parameters
@@ -101,6 +107,10 @@ class TraceAnalyzer:
         else:
             raise TypeError(
                 "intf_microblaze has to be a intf._INTF or int type.")
+
+        if not 1<=num_samples<=MAX_NUM_TRACE_SAMPLES:
+            raise ValueError(f'Number of samples should be in '
+                             f'[1, {MAX_NUM_TRACE_SAMPLES}]')
 
         self.trace_spec = trace_spec
         self.num_samples = num_samples

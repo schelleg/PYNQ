@@ -28,20 +28,22 @@
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from random import randint
-import numpy as np
-import pytest
-from pynq import Overlay
-from pynq.intf import intf_const
-from pynq.intf import request_intf
-
-
 __author__ = "Yun Rock Qu"
 __copyright__ = "Copyright 2016, Xilinx"
 __email__ = "pynq_support@xilinx.com"
 
 
+from random import randint
+import numpy as np
+import pytest
+from pynq import Overlay
+from pynq.intf import intf_const
+from pynq.intf import INTERFACE_ID
+from pynq.intf import request_intf
+
+
 ol = Overlay("interface.bit")
+interface_id = INTERFACE_ID[0]
 
 
 @pytest.mark.run(order=40)
@@ -51,7 +53,7 @@ def test_request_intf():
     Test whether the request_intf() can return an object without errors.
 
     """
-    fixed_id = 3
+    fixed_id = interface_id
     exception_raised = False
     try:
         request_intf(fixed_id, 'arduino_intf.bin')
@@ -70,7 +72,7 @@ def test_request_intf_same():
     runs the same program.
 
     """
-    fixed_id = 3
+    fixed_id = interface_id
     exception_raised = False
     request_intf(fixed_id, 'arduino_intf.bin')
     try:
@@ -90,7 +92,7 @@ def test_intf():
     request_intf().
 
     """
-    fixed_id = 3
+    fixed_id = interface_id
     intf = request_intf(fixed_id, 'arduino_intf.bin')
 
     # Test whether control parameters can be written into the mailbox

@@ -27,10 +27,6 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__author__      = "Giuseppe Natale, Yun Rock Qu"
-__copyright__   = "Copyright 2016, Xilinx"
-__email__       = "pynq_support@xilinx.com"
-
 
 import sys
 import select
@@ -40,21 +36,21 @@ import pytest
 from pynq import Overlay
 from pynq.iop import PMODA
 from pynq.iop import PMODB
+from pynq.iop import PMOD_ID
 from pynq.iop import Pmod_LED8
 from pynq.tests.util import user_answer_yes
-from pynq.tests.util import get_pmod_id
+from pynq.tests.util import get_interface_id
+
+
+__author__      = "Giuseppe Natale, Yun Rock Qu"
+__copyright__   = "Copyright 2016, Xilinx"
+__email__       = "pynq_support@xilinx.com"
+
 
 flag = user_answer_yes("\nPmod LED8 attached to the board?")
 if flag:
-    global led_id
+    led_id = get_interface_id('Pmod LED8', options=PMOD_ID)
 
-    pmod_id = get_pmod_id('Pmod LED8')
-    if pmod_id == 'A':
-        led_id = PMODA
-    elif pmod_id == 'B':
-        led_id = PMODB
-    else:
-        raise ValueError("Please type in A or B.")
 
 @pytest.mark.run(order=22)
 @pytest.mark.skipif(not flag, reason="need LED8 attached in order to run")
@@ -65,9 +61,8 @@ def test_led0():
     on it, requesting user confirmation.
     
     """
-    global leds
-    leds = [Pmod_LED8(led_id,index) for index in range(8)]
-    
+    leds = [Pmod_LED8(led_id, index) for index in range(8)]
+
     led = leds[0]
     led.on()
     assert led.read() is 1
@@ -83,6 +78,8 @@ def test_led0():
     assert led.read() is 1
     led.off()
 
+    del leds
+
 @pytest.mark.run(order=23) 
 @pytest.mark.skipif(not flag, reason="need LED8 attached in order to run") 
 def test_shifts():
@@ -91,8 +88,7 @@ def test_shifts():
     Instantiates 8 LED8 objects and shifts from right to left.
     
     """
-    global leds
-    
+    leds = [Pmod_LED8(led_id, index) for index in range(8)]
     for led in leds:
         led.off()
     
@@ -109,6 +105,8 @@ def test_shifts():
             break
 
     assert user_answer_yes("Pmod LEDs were shifting from LD0 to LD7?")
+    del leds
+
 
 @pytest.mark.run(order=24) 
 @pytest.mark.skipif(not flag, reason="need LED8 attached in order to run")  
@@ -118,8 +116,7 @@ def test_toggle():
     Instantiates 8 LED objects and toggles them. This test can be skipped.
     
     """
-    global leds
-    
+    leds = [Pmod_LED8(led_id, index) for index in range(8)]
     for led in leds:
         led.off()
     leds[0].on()
@@ -142,4 +139,4 @@ def test_toggle():
     assert user_answer_yes("Pmod LEDs were toggling?")
     
     del leds
-    
+

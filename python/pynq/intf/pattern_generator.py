@@ -27,18 +27,27 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__author__ = "Yun Rock Qu"
-__copyright__ = "Copyright 2017, Xilinx"
-__email__ = "pynq_support@xilinx.com"
 
 import re
 import numpy as np
-from .intf_const import INTF_MICROBLAZE_BIN, IOSWITCH_PG_SELECT, \
-    PYNQZ1_DIO_SPECIFICATION, CMD_CONFIG_PG, CMD_ARM_PG, \
-    CMD_RUN, CMD_STOP
-from .intf import request_intf, _INTF
+from .intf_const import INTF_MICROBLAZE_BIN
+from .intf_const import MAX_NUM_PATTERN_SAMPLES
+from .intf_const import MAX_NUM_TRACE_SAMPLES
+from .intf_const import IOSWITCH_PG_SELECT
+from .intf_const import PYNQZ1_DIO_SPECIFICATION
+from .intf_const import CMD_CONFIG_PG
+from .intf_const import CMD_ARM_PG
+from .intf_const import CMD_RUN
+from .intf_const import CMD_STOP
+from .intf import request_intf
+from .intf import _INTF
 from .waveform import Waveform
 from .trace_analyzer import TraceAnalyzer
+
+
+__author__ = "Yun Rock Qu"
+__copyright__ = "Copyright 2017, Xilinx"
+__email__ = "pynq_support@xilinx.com"
 
 
 def wave_to_bitstring(wave):
@@ -128,7 +137,8 @@ class PatternGenerator:
                  stimulus_name='stimulus',
                  analysis_name='analysis',
                  intf_spec=PYNQZ1_DIO_SPECIFICATION,
-                 use_analyzer=True, num_analyzer_samples=4096):
+                 use_analyzer=True,
+                 num_analyzer_samples=MAX_NUM_TRACE_SAMPLES):
         """Return a new Arduino_PG object.
 
         Parameters
@@ -347,16 +357,20 @@ class PatternGenerator:
 
         """
         if self._is_wave_length_equal():
-            return self.stimulus_names[0],\
-                len(self.stimulus_waves[0])
+            name_of_longest_wave = self.stimulus_names[0]
+            max_wave_length = len(self.stimulus_waves[0])
         else:
             max_wave_length = 0
             name_of_longest_wave = ''
             for index, wave in enumerate(self.stimulus_waves):
                 if len(wave) > max_wave_length:
-                    max_wave_length = len(wave)
                     name_of_longest_wave = self.stimulus_names[index]
-            return name_of_longest_wave, max_wave_length
+                    max_wave_length = len(wave)
+
+        if not 1 <= max_wave_length <= MAX_NUM_PATTERN_SAMPLES:
+            raise ValueError(f"Waves should have 1 - "
+                             f"{MAX_NUM_PATTERN_SAMPLES} samples.")
+        return name_of_longest_wave, max_wave_length
 
     def _make_same_wave_length(self):
         """Set the all the waves to the same length.

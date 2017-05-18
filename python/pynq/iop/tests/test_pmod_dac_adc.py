@@ -27,10 +27,6 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__author__      = "Giuseppe Natale, Yun Rock Qu"
-__copyright__   = "Copyright 2016, Xilinx"
-__email__       = "pynq_support@xilinx.com"
-
 
 from random import randint
 from time import sleep
@@ -38,30 +34,23 @@ import pytest
 from pynq import Overlay
 from pynq.iop import PMODA
 from pynq.iop import PMODB
+from pynq.iop import PMOD_ID
 from pynq.iop import Pmod_ADC
 from pynq.iop import Pmod_DAC
 from pynq.tests.util import user_answer_yes
-from pynq.tests.util import get_pmod_id
+from pynq.tests.util import get_interface_id
+
+
+__author__      = "Giuseppe Natale, Yun Rock Qu"
+__copyright__   = "Copyright 2016, Xilinx"
+__email__       = "pynq_support@xilinx.com"
+
 
 flag = user_answer_yes("\nPmod ADC and DAC attached (straight cable)?")
 if flag:
-        global adc_id, dac_id
+    dac_id = get_interface_id('Pmod DAC', options=PMOD_ID)
+    adc_id = get_interface_id('Pmod ADC', options=PMOD_ID)
 
-        pmod_id = get_pmod_id('Pmod DAC')
-        if pmod_id == 'A':
-            dac_id = PMODA
-        elif pmod_id == 'B':
-            dac_id = PMODB
-        else:
-            raise ValueError("Please type in A or B.")
-
-        pmod_id = get_pmod_id('Pmod ADC')
-        if pmod_id == 'A':
-            adc_id = PMODA
-        elif pmod_id == 'B':
-            adc_id = PMODB
-        else:
-            raise ValueError("Please type in A or B.")
 
 @pytest.mark.run(order=26) 
 @pytest.mark.skipif(not flag, reason="need both ADC and DAC attached")
@@ -82,10 +71,9 @@ def test_loop_single():
     Pmod interface.
     
     """
-    global dac,adc
     dac = Pmod_DAC(dac_id)
     adc = Pmod_ADC(adc_id)
-    
+
     value = float(input("\nInsert a voltage in the range of [0.00, 2.00]: "))
     assert value<=2.00, 'Input voltage should not be higher than 2.00V.'
     assert value>=0.00, 'Input voltage should not be lower than 0.00V.'
@@ -93,6 +81,9 @@ def test_loop_single():
     sleep(0.05)
     assert round(abs(value-adc.read()[0]),2)<max(0.1, 0.1*value), \
             'Read value != write value.'
+
+    del dac,adc
+
 
 @pytest.mark.run(order=27) 
 @pytest.mark.skipif(not flag, reason="need both ADC and DAC attached")
@@ -109,14 +100,16 @@ def test_loop_random():
     Pmod interface.
     
     """
+    dac = Pmod_DAC(dac_id)
+    adc = Pmod_ADC(adc_id)
     print('\nGenerating 100 random voltages from 0.00V to 2.00V...')
-    global dac,adc
-    
-    for i in range(100):
+
+    for _ in range(100):
         value = round(0.0001*randint(0,20000),4)
         dac.write(value)
         sleep(0.05)
         assert round(abs(value-adc.read()[0]),2)<max(0.1, 0.1*value), \
             'Read value {} != write value {}.'.format(adc.read(), value)
-    
+
     del dac,adc
+

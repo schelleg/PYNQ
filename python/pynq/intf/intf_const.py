@@ -37,6 +37,8 @@ import numpy as np
 
 # Microblaze constants
 BIN_LOCATION = os.path.dirname(os.path.realpath(__file__)) + "/"
+ARDUINO = 3
+INTERFACE_ID = [ARDUINO]
 
 # Interface mailbox constants
 MAILBOX_OFFSET = 0xF000
@@ -165,10 +167,21 @@ PYNQZ1_DIO_SPECIFICATION = {'clock_mhz': 10,
 
 # FSM generator constants
 FSM_BRAM_ADDR_WIDTH = 13
+FSM_MIN_STATE_BITS = 1
 FSM_MAX_STATE_BITS = 9
+FSM_MIN_NUM_STATES = 2
+FSM_MAX_NUM_STATES = 512
+FSM_MIN_INPUT_BITS = 1
 FSM_MAX_INPUT_BITS = 8
 FSM_MAX_STATE_INPUT_BITS = 13
+FSM_MIN_OUTPUT_BITS = 1
 FSM_MAX_OUTPUT_BITS = 19
+
+# Pattern generator constants
+MAX_NUM_PATTERN_SAMPLES = 4096
+
+# Trace analyzer constants
+MAX_NUM_TRACE_SAMPLES = 4096
 
 # CData Width to Type Conversion
 BYTE_WIDTH_TO_CTYPE = {4: "unsigned int",

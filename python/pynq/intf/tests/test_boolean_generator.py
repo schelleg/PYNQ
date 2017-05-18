@@ -34,9 +34,11 @@ import re
 import pytest
 from pynq import Overlay
 from pynq.tests.util import user_answer_yes
+from pynq.tests.util import get_interface_id
 from pynq.intf import request_intf
 from pynq.intf import BooleanGenerator
-from pynq.intf.intf_const import PYNQZ1_DIO_SPECIFICATION
+from pynq.intf import INTERFACE_ID
+from pynq.intf import PYNQZ1_DIO_SPECIFICATION
 
 
 __author__ = "Yun Rock Qu"
@@ -44,18 +46,22 @@ __copyright__ = "Copyright 2016, Xilinx"
 __email__ = "pynq_support@xilinx.com"
 
 
-ol = Overlay('interface.bit')
+flag = user_answer_yes("\nTest boolean generators?")
+if flag:
+    if_id = get_interface_id('boolean generators', options=INTERFACE_ID)
+    ol = Overlay('interface.bit')
 
 
 @pytest.mark.run(order=45)
-def test_bool_func_1():
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
+def test_bool_func_manual():
     """Test for the BooleanGenerator class.
 
     The first test will test configurations when all 5 pins of a LUT are 
     specified. Users need to manually check the output.
 
     """
-    if_id = 3
+    input(f'\nDisconnect all the pins. Hit enter after done ...')
     pin_dict = PYNQZ1_DIO_SPECIFICATION['output_pin_map']
     first_6_pins = [k for k in list(pin_dict.keys())[:6]]
     out_pin = first_6_pins[5]
@@ -66,10 +72,10 @@ def test_bool_func_1():
     bool_generator.arm()
     bool_generator.run()
     bool_generator.display()
-    print(f'\nConnect all of {in_pins} to GND ...')
+    print(f'Connect all of {in_pins} to GND ...')
     assert user_answer_yes(f"{out_pin} outputs logic low?"), \
         "Boolean configurator fails to show logic low."
-    print(f'Connect any of {in_pins} to 3V3 ...')
+    print(f'Connect any of {in_pins} to VCC ...')
     assert user_answer_yes(f"{out_pin} outputs logic high?"), \
         "Boolean configurator fails to show logic high."
 
@@ -87,19 +93,16 @@ def test_bool_func_1():
 
 
 @pytest.mark.run(order=46)
-def test_bool_func_2():
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
+def test_bool_func_auto():
     """Test for the BooleanGenerator class.
 
     The second test will test the configurations when only part of the 
     LUT pins are used. Multiple instances will be tested.
     
-    For simplicity, pins D0 - D4 will be used as input pins, while D5 - D9
-    will be selected as output pins.
-    
     This is an automatic test so no user interaction is needed.
 
     """
-    if_id = 3
     pin_dict = PYNQZ1_DIO_SPECIFICATION['output_pin_map']
     microblaze_intf = request_intf(if_id)
     first_10_pins = [k for k in list(pin_dict.keys())[:10]]
@@ -109,7 +112,7 @@ def test_bool_func_2():
     for i in range(5):
         fx.append(out_pins[i] + '=' + ('&'.join(sample(in_pins,i+1))))
 
-    print(f'\nConnect randomly {in_pins} to 3V3 or GND.')
+    print(f'\nConnect randomly {in_pins} to VCC or GND.')
     bgs = [BooleanGenerator(microblaze_intf) for _ in range(5)]
 
     # Arm all the boolean generator and run them
@@ -143,6 +146,114 @@ def test_bool_func_2():
                       str_replace, expr)
         expr = expr.replace('=', '==')
         assert eval(expr), f"Boolean generator fails for {fx[i]}."
+
+    for bg in bgs:
+        bg.intf.reset_buffers()
+        del bg
+
+
+@pytest.mark.run(order=47)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
+def test_bool_func_input():
+    """Test for the BooleanGenerator class.
+
+    This test will test whether 0-input or 6-input expressions are accepted.
+
+    """
+    pin_dict = PYNQZ1_DIO_SPECIFICATION['output_pin_map']
+    first_1_pin = list(pin_dict.keys())[0]
+    next_6_pins = [k for k in list(pin_dict.keys())[1:7]]
+    expr_no_rhs = first_1_pin
+    expr_no_input = first_1_pin + '='
+    expr_6_inputs = first_1_pin + '=' + ('&'.join(next_6_pins))
+    bool_generator = BooleanGenerator(if_id, use_analyzer=False)
+
+    exception_raised = False
+    try:
+        bool_generator.config(expr_no_rhs)
+    except ValueError:
+        exception_raised = True
+    assert exception_raised, 'Should raise exception if function has no RHS.'
+
+    exception_raised = False
+    try:
+        bool_generator.config(expr_no_input)
+    except ValueError:
+        exception_raised = True
+    assert exception_raised, 'Should raise exception if function has 0 input.'
+
+    exception_raised = False
+    try:
+        bool_generator.config(expr_6_inputs)
+    except ValueError:
+        exception_raised = True
+    assert exception_raised, 'Should raise exception if function has 6 inputs.'
+
+    bool_generator.intf.reset_buffers()
+    del bool_generator
+
+
+@pytest.mark.run(order=48)
+@pytest.mark.skipif(not flag, reason="need to confirm the test to run")
+def test_bool_func_output():
+    """Test for the BooleanGenerator class.
+
+    This test will implement a maximum number of boolean generators, 
+    each having 1 input.
+    
+    For example, PYNQ-Z1 has 20 pins for Arduino header, so 19 boolean 
+    generators will be implemented, each having 1 output assigned to 1 pin.
+    All the generators share the same input pin.
+
+    """
+    pin_dict = PYNQZ1_DIO_SPECIFICATION['output_pin_map']
+    interface_width = PYNQZ1_DIO_SPECIFICATION['interface_width']
+    all_pins = [k for k in list(pin_dict.keys())[:interface_width]]
+    num_bgs = interface_width - 1
+    in_pin = all_pins[0]
+    out_pins = all_pins[1:]
+    fx = list()
+    for i in range(num_bgs):
+        fx.append(out_pins[i] + '=' + in_pin)
+
+    bgs = [BooleanGenerator(if_id) for _ in range(num_bgs)]
+    print('')
+    for voltage in ['VCC', 'GND']:
+        print(f'Disconnect all the pins. Connect only {in_pin} to {voltage}.')
+        input(f'Press enter when done ...')
+        for i in range(num_bgs):
+            bgs[i].config(fx[i])
+            bgs[i].arm()
+            bgs[i].run()
+            bgs[i].display()
+            bgs[i].stop()
+
+            wavelanes_in = bgs[i].waveform.waveform_dict['signal'][0][1:]
+            wavelanes_out = bgs[i].waveform.waveform_dict['signal'][-1][1:]
+            expr = deepcopy(fx[i])
+
+            wavelane = wavelanes_in[0]
+            if 'h' == wavelane['wave'][0]:
+                str_replace = '1'
+            elif 'l' == wavelane['wave'][0]:
+                str_replace = '0'
+            else:
+                raise ValueError("Unrecognizable pattern captured.")
+            expr = re.sub(r"\b{}\b".format(wavelane['name']),
+                          str_replace, expr)
+
+            wavelane = wavelanes_out[0]
+            if 'h' == wavelane['wave'][0]:
+                str_replace = '1'
+            elif 'l' == wavelane['wave'][0]:
+                str_replace = '0'
+            else:
+                raise ValueError("Unrecognizable pattern captured.")
+            expr = re.sub(r"\b{}\b".format(wavelane['name']),
+                          str_replace, expr)
+
+            expr = expr.replace('=', '==')
+            assert eval(expr), f"Boolean generator fails for {fx[i]}."
 
     for bg in bgs:
         bg.intf.reset_buffers()

@@ -39,6 +39,7 @@ from .pattern_generator import PatternGenerator
 from .trace_analyzer import TraceAnalyzer
 from .fsm_generator import FSMGenerator
 
+
 __author__ = "Yun Rock Qu"
 __copyright__ = "Copyright 2017, Xilinx"
 __email__ = "pynq_support@xilinx.com"
