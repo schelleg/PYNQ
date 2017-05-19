@@ -27,18 +27,14 @@
 #   OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 #   ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
-import sys
-import math
 import numpy as np
 from pynq import MMIO
 from pynq import GPIO
 from pynq import PL
 from pynq import Clocks
 from pynq import Xlnk
-from pynq.intf import intf_const
 from pynq import Register
-
+from . import intf_const
 
 __author__ = "Yun Rock Qu"
 __copyright__ = "Copyright 2016, Xilinx"
