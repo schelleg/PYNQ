@@ -407,6 +407,7 @@ class FSMBuilder:
 
         if fsm_spec:
             self.fsm_spec = self.parse_fsm_spec(fsm_spec, use_state_bits)
+            self.config()
         else:
             self.fsm_spec = None
 

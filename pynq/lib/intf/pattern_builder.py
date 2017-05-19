@@ -156,11 +156,12 @@ class PatternBuilder:
                 "intf_microblaze has to be a intf._INTF or int type.")
 
         self.intf_spec = intf_spec
+        self.stimulus_name = stimulus_name
+        self.analysis_name = analysis_name
         self.src_samples = None
         self.dst_samples = None
 
         self.waveform_dict = waveform_dict
-        self.config()
 
         if use_analyzer:
             self.analyzer = TraceAnalyzer(
@@ -168,6 +169,8 @@ class PatternBuilder:
                 trace_spec=intf_spec)
         else:
             self.analyzer = None
+
+        self.config()
 
     @property
     def max_wave_length(self):
@@ -233,10 +236,8 @@ class PatternBuilder:
         if waveform_dict is not None:
             self.waveform_dict = waveform_dict
 
-        self.waveform = Waveform(self.waveform_dict, stimulus_name=stimulus_name,
-                                 analysis_name=analysis_name)
-        self.stimulus_name = stimulus_name
-        self.analysis_name = analysis_name
+        self.waveform = Waveform(self.waveform_dict, stimulus_name=self.stimulus_name,
+                                 analysis_name=self.analysis_name)
         self.stimulus_group = self.waveform.stimulus_group
         self.analysis_group = self.waveform.analysis_group
         self.stimulus_names = self.waveform.stimulus_names

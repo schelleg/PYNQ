@@ -200,7 +200,7 @@ class _INTF:
             pass
 
         # Bookkeeping on which builders are armed
-        if command in armed_builders:
+        if command in self.armed_builders:
             self.armed_builders[command] = True
         elif command == intf_const.CMD_RUN:
             self.armed_builders = {k: False for k in self.armed_builders}
@@ -368,7 +368,7 @@ class _INTF:
         self.write_command(intf_const.CMD_INTF_SWITCH_CONFIG)
 
 
-def request_intf(if_id, mb_program=intf_const.INTF_MICROBLAZE_BIN):
+def request_intf(if_id=intf_const.ARDUINO, mb_program=intf_const.INTF_MICROBLAZE_BIN):
     """This is the interface to request an I/O Processor.
 
     It looks for active instances on the same interface ID, and prevents

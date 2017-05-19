@@ -44,7 +44,7 @@ from .switch import Switch
 from .button import Button
 
 from .intf import request_intf
-from .intf import FSMGenerator
-from .intf import PatternGenerator
-from .intf import BooleanGenerator
+from .intf import FSMBuilder
+from .intf import PatternBuilder
+from .intf import BooleanBuilder
 from .intf import Waveform

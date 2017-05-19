@@ -38,6 +38,9 @@ import numpy as np
 # Microblaze constants
 BIN_LOCATION = os.path.dirname(os.path.realpath(__file__)) + "/"
 
+# PYNQ-Z1 DIO Overlay constants
+ARDUINO = 3
+
 # Interface mailbox constants
 MAILBOX_OFFSET = 0xF000
 MAILBOX_SIZE = 0x1000
@@ -68,7 +71,6 @@ CMD_STOP = 0xE
 CMD_RUN_STATUS = 0xF
 CMD_READ_CFG_DIRECTION = 0xc
 
-
 IOSWITCH_BG_SELECT = 0
 IOSWITCH_PG_SELECT = 1
 IOSWITCH_SMG_SELECT = 2
@@ -76,7 +78,6 @@ IOSWITCH_SMG_SELECT = 2
 CMDS_ARM_BUILDER_LIST = [CMD_ARM_CFG, CMD_ARM_PG, CMD_ARM_SMG, CMD_ARM_TRACE]
 
 INTF_MICROBLAZE_BIN = "arduino_intf.bin"
-
 
 PYNQZ1_DIO_SPECIFICATION = {'clock_mhz': 10,
                             'interface_width': 20,
