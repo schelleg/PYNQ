@@ -103,7 +103,7 @@ if { $list_projs eq "" } {
    create_project interface interface -part xc7z020clg400-1
 }
 
-set_property  ip_repo_paths  ../ip [current_project]
+set_property  ip_repo_paths  ../../ip [current_project]
 update_ip_catalog
 
 # CHANGE DESIGN NAME HERE
@@ -3019,11 +3019,11 @@ CONFIG.DOUT_WIDTH {1} \
 create_root_design ""
 
 # Add top wrapper and xdc files
-add_files -norecurse ./src/top.v
+add_files -norecurse ./vivado/top.v
 update_compile_order -fileset sources_1
 set_property top top [current_fileset]
 update_compile_order -fileset sources_1
-add_files -fileset constrs_1 -norecurse ./src/constraints/top.xdc
+add_files -fileset constrs_1 -norecurse ./vivado/constraints/top.xdc
 
 # call implement
 launch_runs impl_1 -to_step write_bitstream -jobs 4
@@ -3032,10 +3032,10 @@ wait_on_run impl_1
 # This hardware definition file will be used for microblaze projects
 file mkdir ./interface/interface.sdk
 write_hwdef -force  -file ./interface/interface.sdk/interface.hdf
-file copy -force ./interface/interface.sdk/interface.hdf ../../sdk/
+file copy -force ./interface/interface.sdk/interface.hdf .
 
 # move and rename bitstream to final location
-file copy -force ./interface/interface.runs/impl_1/top.bit ../../bitstream/interface.bit
+file copy -force ./interface/interface.runs/impl_1/top.bit interface.bit
 
 
 

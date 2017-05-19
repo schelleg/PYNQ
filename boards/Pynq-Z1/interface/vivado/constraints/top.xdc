@@ -1,7 +1,7 @@
 #set_property -dict {PACKAGE_PIN R14 IOSTANDARD LVCMOS33} [get_ports LED[0]]
 #set_property -dict {PACKAGE_PIN P14 IOSTANDARD LVCMOS33} [get_ports shield_gr_0_io[4]]
 
-##Switches
+## Switches
 #set_property -dict {PACKAGE_PIN M20 IOSTANDARD LVCMOS33} [get_ports {sw_input[0]}]
 #set_property -dict {PACKAGE_PIN M19 IOSTANDARD LVCMOS33} [get_ports {sw_input[1]}]
 
@@ -18,7 +18,7 @@ set_property -dict {PACKAGE_PIN N16 IOSTANDARD LVCMOS33} [get_ports {LED[2]}]
 set_property -dict {PACKAGE_PIN M14 IOSTANDARD LVCMOS33} [get_ports {LED[3]}]
 
 ##RGBLED1
-set_property -dict {PACKAGE_PIN G17 IOSTANDARD LVCMOS33} [get_ports {rgbled_0[0]}]
+#set_property -dict {PACKAGE_PIN G17 IOSTANDARD LVCMOS33} [get_ports {rgbled_0[0]}]
 ##RGBLED0
 #set_property -dict {PACKAGE_PIN L14 IOSTANDARD LVCMOS33} [get_ports sig_debounced_out]
 
@@ -74,3 +74,6 @@ set_property PULLUP true [get_ports {pmodJB[2]}]
 set_property PULLUP true [get_ports {pmodJB[3]}]
 set_property PULLUP true [get_ports {pmodJB[6]}]
 set_property PULLUP true [get_ports {pmodJB[7]}]
+
+##pg_clk on Arduino SCL (left most pin of the top-row of header
+set_property -dict {PACKAGE_PIN P16 IOSTANDARD LVCMOS33} [get_ports pg_clk]
