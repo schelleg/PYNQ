@@ -45,8 +45,8 @@ __copyright__ = "Copyright 2017, Xilinx"
 __email__ = "pynq_support@xilinx.com"
 
 
-class BooleanGenerator:
-    """Class for the Combinational Function Generator.
+class BooleanBuilder:
+    """Class for the Combinational Function Builder.
 
     This class can implement any combinational function on user IO pins. Since
     each LUT5 takes 5 inputs, the basic function that users can implement is
@@ -73,7 +73,7 @@ class BooleanGenerator:
 
     """
 
-    def __init__(self, intf_microblaze,
+    def __init__(self, intf_microblaze, expr=None,
                  intf_spec=PYNQZ1_DIO_SPECIFICATION,
                  use_analyzer=True, num_analyzer_samples=16):
         """Return a new Arduino_CFG object.
@@ -99,7 +99,7 @@ class BooleanGenerator:
         intf_spec : dict
             The interface specification.
         use_analyzer : bool
-            Whether to attach an analyzer to the boolean generator.
+            Whether to attach an analyzer to the boolean builder.
         num_analyzer_samples : int
             Number of analyzer samples to capture.
 
@@ -113,7 +113,7 @@ class BooleanGenerator:
             raise TypeError(
                 "intf_microblaze has to be a intf._INTF or int type.")
 
-        self.expr = None
+
         self.intf_spec = intf_spec
         self.output_pin = None
         self.input_pins = None
@@ -125,6 +125,11 @@ class BooleanGenerator:
                 trace_spec=intf_spec)
         else:
             self.analyzer = None
+
+        if expr is not None:
+            self.config(expr)
+        else:
+            self.expr = expr
 
     def _config_ioswitch(self):
         """Configure the IO switch.
@@ -239,7 +244,7 @@ class BooleanGenerator:
                 ['analysis']],
                 'foot': {'tick': 1},
                 'head': {'tick': 1,
-                         'text': f'Boolean Logic Generator ({self.expr})'}}
+                         'text': f'Boolean Logic Builder ({self.expr})'}}
 
         # Append four inputs and one output to waveform view
         for name in self.input_pins:
@@ -255,9 +260,9 @@ class BooleanGenerator:
             self.analyzer.config()
 
     def arm(self):
-        """Arm the boolean generator.
+        """Arm the boolean builder.
 
-        This method will prepare the boolean generator.
+        This method will prepare the boolean builder.
 
         """
         self.intf.write_command(CMD_ARM_CFG)
@@ -265,12 +270,17 @@ class BooleanGenerator:
         if self.analyzer is not None:
             self.analyzer.arm()
 
+    def is_armed(self):
+        """ Check if this builder's hardware is armed """
+        return self.intf.armed_builders[CMD_ARM_CFG]
+
     def run(self):
         """Run the boolean generation.
 
         This method will start to run the boolean generation.
 
         """
+        self.arm()
         self.intf.write_command(CMD_RUN)
 
     def stop(self):
@@ -281,7 +291,7 @@ class BooleanGenerator:
         """
         self.intf.write_command(CMD_STOP)
 
-    def display(self):
+    def show_waveform(self):
         """Display the boolean logic generation in a Jupyter notebook.
 
         A wavedrom waveform is shown with all inputs and outputs displayed.

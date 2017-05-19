@@ -98,6 +98,9 @@ class _INTF:
         self.clk = Clocks
         self.buf_manager = Xlnk()
         self.buffers = dict()
+        self.armed_builders = {k: False for k in intf_const.CMDS_ARM_BUILDER_LIST}
+
+
         self.program()
 
     def start(self):
@@ -195,6 +198,12 @@ class _INTF:
         while not (self.mmio.read(intf_const.MAILBOX_OFFSET +
                                   intf_const.MAILBOX_PY2DIF_CMD_OFFSET) == 0):
             pass
+
+        # Bookkeeping on which builders are armed
+        if command in armed_builders:
+            self.armed_builders[command] = True
+        elif command == intf_const.CMD_RUN:
+            self.armed_builders = {k: False for k in self.armed_builders}
 
     def run(self):
         """Run the command.

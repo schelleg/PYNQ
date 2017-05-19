@@ -105,8 +105,8 @@ def int_to_sample(bits):
     return np.uint32(int("".join(map(str, list(bits[::-1]))), 2))
 
 
-class PatternGenerator:
-    """Class for the Pattern Generator.
+class PatternBuilder:
+    """Class for the Pattern Builder.
 
     This class can generate digital IO patterns / stimulus on output pins.
     Users can specify whether to use a pin as input or output.
@@ -147,7 +147,6 @@ class PatternGenerator:
             Indicate whether to use the analyzer to capture the trace as well.
 
         """
-
         if isinstance(intf_microblaze, _INTF):
             self.intf = intf_microblaze
         elif isinstance(intf_microblaze, int):
@@ -159,17 +158,9 @@ class PatternGenerator:
         self.intf_spec = intf_spec
         self.src_samples = None
         self.dst_samples = None
-        self.waveform = Waveform(waveform_dict, stimulus_name=stimulus_name,
-                                 analysis_name=analysis_name)
-        self.stimulus_name = stimulus_name
-        self.analysis_name = analysis_name
-        self.stimulus_group = self.waveform.stimulus_group
-        self.analysis_group = self.waveform.analysis_group
-        self.stimulus_names = self.waveform.stimulus_names
-        self.stimulus_pins = self.waveform.stimulus_pins
-        self.stimulus_waves = self.waveform.stimulus_waves
-        self._wave_length_equal = self._is_wave_length_equal()
-        self._longest_wave, self._max_wave_length = self._get_max_wave_length()
+
+        self.waveform_dict = waveform_dict
+        self.config()
 
         if use_analyzer:
             self.analyzer = TraceAnalyzer(
@@ -211,7 +202,7 @@ class PatternGenerator:
         # send list to _INTF processor for handling
         self.intf.config_ioswitch(ioswitch_pins, IOSWITCH_PG_SELECT)
 
-    def config(self, frequency_mhz=10):
+    def config(self, waveform_dict=None, frequency_mhz=10):
         """Configure the PG with a single bit pattern.
 
         Generates a bit pattern for a single shot operation at specified IO 
@@ -224,7 +215,7 @@ class PatternGenerator:
         token inside wave are already converted into bit string.
 
         Users can ignore the returned data in case only the pattern
-        generator is required.
+        builder is required.
 
         Parameters
         ----------
@@ -237,9 +228,26 @@ class PatternGenerator:
             The generated samples, and the captured samples.
 
         """
-        self._make_same_wave_length()
-        self.intf.clk.fclk1_mhz = frequency_mhz
 
+        # Update Waveform based on waveform_dict
+        if waveform_dict is not None:
+            self.waveform_dict = waveform_dict
+
+        self.waveform = Waveform(self.waveform_dict, stimulus_name=stimulus_name,
+                                 analysis_name=analysis_name)
+        self.stimulus_name = stimulus_name
+        self.analysis_name = analysis_name
+        self.stimulus_group = self.waveform.stimulus_group
+        self.analysis_group = self.waveform.analysis_group
+        self.stimulus_names = self.waveform.stimulus_names
+        self.stimulus_pins = self.waveform.stimulus_pins
+        self.stimulus_waves = self.waveform.stimulus_waves
+        self._wave_length_equal = self._is_wave_length_equal()
+        self._longest_wave, self._max_wave_length = self._get_max_wave_length()
+        self._make_same_wave_length()
+
+        # Set other PG parameters
+        self.intf.clk.fclk1_mhz = frequency_mhz
         self._config_ioswitch()
 
         direction_mask = 0xFFFFF
@@ -277,9 +285,9 @@ class PatternGenerator:
         self.intf.free_buffer('src_buf')
 
     def arm(self):
-        """Arm the pattern generator.
+        """Arm the pattern builder.
         
-        This method will prepare the pattern generator.
+        This method will prepare the pattern builder.
 
         """
         self.intf.write_command(CMD_ARM_PG)
@@ -287,12 +295,17 @@ class PatternGenerator:
         if self.analyzer is not None:
             self.analyzer.arm()
 
+    def is_armed(self):
+        """ Check if this builder's hardware is armed """
+        return self.intf.armed_builders[CMD_ARM_PG]
+
     def run(self):
         """Run the pattern generation.
 
         This method will start to run the pattern generation.
 
         """
+        self.arm()
         self.intf.write_command(CMD_RUN)
 
     def stop(self):
@@ -303,7 +316,7 @@ class PatternGenerator:
         """
         self.intf.write_command(CMD_STOP)
 
-    def display(self):
+    def show_waveform(self):
         """Display the waveform in Jupyter notebook.
 
         This method requires the waveform class to be present. At the same

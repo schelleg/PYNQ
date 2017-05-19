@@ -278,8 +278,8 @@ def get_bram_addr_offsets(num_states, num_input_bits):
            [i * 2 ** index_offset for i in range(2 ** num_input_bits)]
 
 
-class FSMGenerator:
-    """Class for Finite State Machine Generator.
+class FSMBuilder:
+    """Class for Finite State Machine Builder.
 
     This class enables users to specify a Finite State Machine (FSM). Users
     have to provide a FSM in the following format.
@@ -340,7 +340,7 @@ class FSMGenerator:
                  intf_spec=PYNQZ1_DIO_SPECIFICATION,
                  use_analyzer=True, use_state_bits=False,
                  num_analyzer_samples=4096):
-        """Initialize the FSM generator class.
+        """Initialize the FSM builder class.
 
         Users can specify the `fsm_spec` when instantiating the object, or
         provide this specification later, and call `parse_fsm_spec()`.
@@ -642,7 +642,7 @@ class FSMGenerator:
         self.intf.config_ioswitch(ioswitch_pins, IOSWITCH_SMG_SELECT)
 
     def config(self, frequency_mhz=10):
-        """Configure the programmable FSM generator.
+        """Configure the programmable FSM builder.
 
         This method will configure the FSM based on supplied configuration 
         specification. Users can send the samples to PatternAnalyzer for 
@@ -747,9 +747,9 @@ class FSMGenerator:
         self.intf.free_buffer('bram_data_buf')
 
     def arm(self):
-        """Arm the FSM generator.
+        """Arm the FSM builder.
         
-        This method will prepare the FSM generator.
+        This method will prepare the FSM builder.
 
         """
         self.intf.write_command(CMD_ARM_SMG)
@@ -757,8 +757,12 @@ class FSMGenerator:
         if self.analyzer is not None:
             self.analyzer.arm()
 
+    def is_armed(self):
+        """ Check if this builder's hardware is armed """
+        return self.intf.armed_builders[CMD_ARM_SMG]
+
     def stop(self):
-        """Stop the FSM pattern generator.
+        """Stop the FSM pattern builder.
 
         Note this command will stop the pattern generation from FSM, so
         users will see all-zero samples captured unless the FSM is started
@@ -775,9 +779,10 @@ class FSMGenerator:
         To rerun the generation, users have to do config(), arm(), and run().
 
         """
+        self.arm()
         self.intf.write_command(CMD_RUN)
 
-    def display_graph(self, file_name='fsm_spec.png'):
+    def show_state_diagram(self, file_name='fsm_spec.png'):
         """Display the state machine in Jupyter notebook.
 
         This method uses the installed package `pygraphviz`. References:
@@ -817,7 +822,7 @@ class FSMGenerator:
         display(Image(filename=file_name))
         os.system("rm -rf fsm_spec.dot")
 
-    def display(self):
+    def show_waveform(self):
         """Display the waveform.
         
         This method requires the waveform class to be present. Also, 

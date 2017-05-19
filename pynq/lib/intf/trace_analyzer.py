@@ -135,6 +135,10 @@ class TraceAnalyzer:
         """
         self.intf.write_command(CMD_ARM_TRACE)
 
+    def is_armed(self):
+        """ Check if this builder's hardware is armed """
+        return self.intf.armed_builders[CMD_ARM_CFG]
+
     def run(self):
         """Start the pattern analysis.
         
