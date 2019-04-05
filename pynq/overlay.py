@@ -462,8 +462,35 @@ class Overlay(Bitstream):
                                self._ip_map._keys()))
 
 
+class OverlayFromPL(Overlay):
+    def __init__(self, bitfile_name, download=True, ignore_version=False):
+        """This Class subclasses from Overlay, skipping all the Tcl/HWH parsing
+
+        See the Overlay Class for details on parameters.
+
+        """
+
+        self.ignore_version = ignore_version
+        self.ip_dict = PL.ip_dict
+        self.gpio_dict = PL.gpio_dict
+        self.interrupt_controllers = PL.interrupt_controllers
+        self.interrupt_pins = PL.interrupt_pins
+        self.hierarchy_dict = PL.hierarchy_dict
+
+        description = _complete_description(
+            self.ip_dict, self.hierarchy_dict, self.ignore_version)
+        self._ip_map = _IPMap(description)
+
+    def __getattr__(self, key):
+        return getattr(self._ip_map, key)
+
+
 _ip_drivers = dict()
 _hierarchy_drivers = collections.deque()
+
+
+
+
 
 
 class RegisterIP(type):
