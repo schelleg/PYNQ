@@ -11,9 +11,24 @@ export BOARD=${PYNQ_BOARD}
 cd /home/xilinx
 mkdir -p jupyter_notebooks
 
+# python3.8 -m pip install -U cffi
+
+
+cat > requirements.txt <<EOT
+  numpy
+  cffi
+EOT
+
+PYTHONPATH=/usr/lib/python3/dist-packages python3 -m pip install -U -r requirements.txt
+rm requirements.txt
+
+
+echo `which python3`
+echo `which python3.8`
+
 cd pynq_git
-BOARD=${PYNQ_BOARD} PYNQ_JUPYTER_NOTEBOOKS=${PYNQ_JUPYTER_NOTEBOOKS} \
-python3 -m pip install dist/*.tar.gz --upgrade --no-deps
+PYTHONPATH=/usr/lib/python3/dist-packages BOARD=${PYNQ_BOARD} PYNQ_JUPYTER_NOTEBOOKS=${PYNQ_JUPYTER_NOTEBOOKS} \
+     python3 -m pip install dist/*.tar.gz --upgrade --no-deps
 cd ..
 
 old_hostname=$(hostname)
