@@ -1,5 +1,12 @@
-STAGE2_PACKAGES_aarch64 := gcc-mb libsds python_packages_focal 
-STAGE2_PACKAGES_aarch64 += phantomjs-fix
+STAGE2_PACKAGES_aarch64 := libsds python_packages_focal jupyter
+STAGE2_PACKAGES_aarch64 += phantomjs-fix 
 STAGE2_PACKAGES_aarch64 += glog pybind11 json-c googletest protobuf
 STAGE2_PACKAGES_aarch64 += bootpy
-STAGE3_PACKAGES_aarch64 :=  x11 pynq resizefs stage3temp
+STAGE3_PACKAGES_aarch64 := pynq x11 resizefs stage3temp
+
+# TODO Get it Back to this structure
+# STAGE2_PACKAGES_aarch64 := gcc-mb libsds python_packages_bionic jupyter
+# STAGE2_PACKAGES_aarch64 += phantomjs-fix sigrok
+# STAGE2_PACKAGES_aarch64 += glog pybind11 json-c googletest protobuf opencv
+# STAGE2_PACKAGES_aarch64 += bootpy
+# STAGE3_PACKAGES_aarch64 := pynq x11 resizefs

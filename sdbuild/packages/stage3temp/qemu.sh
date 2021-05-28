@@ -20,3 +20,6 @@ cd cpio-2.13
 ./configure
 make
 make install
+
+cd ..
+rm -rf cpio-2.13

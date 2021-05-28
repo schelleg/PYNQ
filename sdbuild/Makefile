@@ -321,7 +321,8 @@ $$(STAGE1_$1): $$(CONFIG_$1)/multistrap.config | $$(BUILD_ROOT) $$(CCACHEDIR)
 .PRECIOUS: $$(STAGE1_$1) $$(STAGE2_$2) $$(BASE_$1)
 
 qemu_check_$1:
-	$$(QEMU_$1) -version | fgrep ${QEMU_VERSION}
+	# $$(QEMU_$1) -version | fgrep ${QEMU_VERSION}
+	# TODO Set the correct check once known if 4.0.0 is still usable
 
 $$(DIST_$1): $$(BASE_PATH_$1) | $$(DIST_ROOT)
 	mkdir -p $$@
