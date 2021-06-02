@@ -31,7 +31,9 @@ tar -xf ${libsigrokdecode}.tar.gz
 cd ${libsigrokdecode}
 patch -p2 -i $patch_file
 export PKG_CONFIG_PATH=/opt/sigrok/lib/pkgconfig
-./configure --prefix=/opt/sigrok
+./configure --prefix=/opt/sigrok \
+	    LDFLAGS="-L/usr/lib/python3.8/config-3.8-aarch64-linux-gnu" \
+	    LIBS="-lpython3.8"
 make
 make install
 cd ..
