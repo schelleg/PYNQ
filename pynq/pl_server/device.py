@@ -755,7 +755,7 @@ class XlnkDevice(Device):
                         f = ZU_AXIFM_REG[para][reg_name]['field']
                         Register(addr)[f[0]:f[1]] = ZU_AXIFM_VALUE[width]
 
-    def download(self, bitstream, parser=None):
+    def download(self, bitstream, parser=None, download_type=True):
         if not bitstream.binfile_name:
             _preload_binfile(bitstream)
 

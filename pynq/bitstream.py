@@ -167,7 +167,7 @@ class Bitstream:
         self.timestamp = ''
         self.partial = partial
 
-    def download(self, parser=None):
+    def download(self, parser=None, download_type=True):
         """Download the bitstream onto PL and update PL information.
 
         If device tree blob has been specified during initialization, this
@@ -184,7 +184,7 @@ class Bitstream:
         None
 
         """
-        self.device.download(self, parser)
+        self.device.download(self, parser, download_type)
 
     def remove_dtbo(self):
         """Remove dtbo file from the system.

@@ -481,7 +481,7 @@ class XrtDevice(Device):
             xrt.xclCloseContext(self.handle, c[0], c[1])
         self.contexts = []
 
-    def download(self, bitstream, parser=None):
+    def download(self, bitstream, parser=None, download_type=True):
         # Keep copy of old contexts so we can reacquire them if
         # downloading fails
         old_contexts = copy.deepcopy(self.contexts)
@@ -508,7 +508,9 @@ class XrtDevice(Device):
         finally:
             xrt.xclUnlockDevice(self.handle)
 
-        super().post_download(bitstream, parser)
+        # TODO get enum types passing through the calls
+        if download_type != 2:
+            super().post_download(bitstream, parser)
 
         # Setup the execution context for the new xclbin
         if parser is not None:

@@ -34,6 +34,7 @@ import os
 import re
 import struct
 import warnings
+from enum import Enum
 from copy import deepcopy
 from .mmio import MMIO
 from .ps import Clocks
@@ -222,6 +223,13 @@ def _build_docstring(description, name, type_):
     return '\n    '.join(lines)
 
 
+class OverlayDownloadType(Enum):
+    full_download = True
+    overlay_metadata_only = False
+    xclbin_memorytopology_only = 2
+    plserver_metadata_only = 3
+
+
 class Overlay(Bitstream):
     """This class keeps track of a single bitstream's state and contents.
 
@@ -352,7 +360,7 @@ class Overlay(Bitstream):
         self._ip_map = _IPMap(description)
 
         if download:
-            self.download()
+            self.download(download_type=download)
 
         self.__doc__ = _build_docstring(self._ip_map._description,
                                         bitfile_name,
@@ -386,7 +394,7 @@ class Overlay(Bitstream):
         if hasattr(self.device, 'free_bitstream'):
             self.device.free_bitstream()
 
-    def download(self, dtbo=None):
+    def download(self, dtbo=None, download_type=True):
         """The method to download a full bitstream onto PL.
 
         After the bitstream has been downloaded, the "timestamp" in PL will be
@@ -416,7 +424,7 @@ class Overlay(Bitstream):
                 else:
                     Clocks.set_pl_clk(i)
 
-        super().download(self.parser)
+        super().download(self.parser, download_type)
         if dtbo:
             super().insert_dtbo(dtbo)
         elif self.dtbo:

@@ -266,12 +266,15 @@ def _xclbin_to_dicts(filename):
 
     xclbin_uuid = bytes(header.m_header.u2.uuid).hex()
 
-    ip_dict = _xclxml_to_ip_dict(
-        sections[xclbin.AXLF_SECTION_KIND.EMBEDDED_METADATA].decode(),
-        xclbin_uuid)
-    ip_layout = xclbin.ip_layout.from_buffer(
-        sections[xclbin.AXLF_SECTION_KIND.IP_LAYOUT])
-    ip_data = _get_object_as_array(ip_layout.m_ip_data[0], ip_layout.m_count)
+    if xclbin.AXLF_SECTION_KIND.EMBEDDED_METADATA in sections:
+        ip_dict = _xclxml_to_ip_dict(
+            sections[xclbin.AXLF_SECTION_KIND.EMBEDDED_METADATA].decode(),
+            xclbin_uuid)
+        ip_layout = xclbin.ip_layout.from_buffer(
+            sections[xclbin.AXLF_SECTION_KIND.IP_LAYOUT])
+        ip_data = _get_object_as_array(ip_layout.m_ip_data[0], ip_layout.m_count)
+    else:
+        ip_dict = {}
 
     if xclbin.AXLF_SECTION_KIND.CONNECTIVITY in sections:
         connectivity = xclbin.connectivity.from_buffer(
@@ -287,7 +290,8 @@ def _xclbin_to_dicts(filename):
                     for i, m in enumerate(mem_data)}
         mem_dict = {memories[i].decode(): _mem_data_to_dict(i, mem)
                     for i, mem in enumerate(mem_data)}
-        _add_argument_memory(ip_dict, ip_data, connections, memories)
+        if bool(ip_dict):
+            _add_argument_memory(ip_dict, ip_data, connections, memories)
     else:
         mem_dict = {}
     
