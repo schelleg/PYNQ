@@ -22,4 +22,4 @@ make
 make install
 
 cd ..
-rm -rf cpio-2.13
+rm -rf cpio-2.13 cpio-2.13.tar.gz
