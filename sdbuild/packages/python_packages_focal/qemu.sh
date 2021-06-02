@@ -4,9 +4,14 @@ set -x
 set -e
 
 
+# TODO ... distutils and pip clashing ...
+# ATTEMPT1 apt-get remove ... not working, would remove dist-util packages  apt-get remove -y python3-zmq
+# ATTEMPT2 trying PYTHONPATH below to force a venv of python3.8 packages that would/should get seen first... not pexpect
+# ATTEMPT3 remove 
+
 # Captured using pip3 freeze on image after packages installed with no versions
+cd /root
 cat > requirements.txt <<EOT
-2ping==4.3
 anyio==3.1.0
 argon2-cffi==20.1.0
 async-generator==1.10
@@ -25,7 +30,6 @@ dbus-python==1.2.16
 decorator==4.4.2
 defusedxml==0.7.1
 distro==1.4.0
-distro-info===0.23ubuntu1
 dnspython==1.16.0
 entrypoints==0.3
 httplib2==0.14.0
@@ -66,7 +70,7 @@ nbclient==0.5.3
 nbconvert==6.0.7
 nbformat==5.1.3
 nest-asyncio==1.5.1
-netifaces==0.10.4
+netifaces==0.11.0
 networkx==2.4
 notebook==6.4.0
 numexpr==2.7.1
@@ -94,12 +98,10 @@ pygraphviz==1.5
 PyJWT==1.7.1
 pymacaroons==0.13.0
 PyNaCl==1.3.0
-pynq==2.6.2
 pyparsing==2.4.6
 pyrsistent==0.17.3
 pytest==4.6.9
 pytest-sourceorder==0.5.1
-python-apt==2.0.0
 python-dateutil==2.7.3
 pytz==2019.3
 PyWavelets==0.5.1
@@ -135,8 +137,13 @@ webencodings==0.5.1
 websocket-client==1.0.1
 widgetsnbextension==3.5.1
 zipp==1.0.0
- EOT
+EOT
+
+
+
+python3 -m venv --system-site-packages pynq-venv
+source ./pynq-venv/bin/activate
 
 python3 -m pip install pip==21.1.2
-# python3 -m pip install -r requirements.txt
-# rm requirements.txt
+python3 -m pip install -r requirements.txt
+rm requirements.txt
