@@ -12,8 +12,6 @@ cd /home/xilinx
 mkdir -p jupyter_notebooks
 
 source /root/pynq-venv/bin/activate
-python3 -m pip install -U -r requirements.txt
-rm requirements.txt
 
 echo "pynq/qemu.sh"
 echo `which python3`

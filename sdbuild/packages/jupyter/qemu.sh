@@ -18,6 +18,7 @@ curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
 echo deb https://deb.nodesource.com/node_12.x focal main > /etc/apt/sources.list.d/nodesource.list
 apt-get update && apt-get install -y nodejs
 
+source /root/pynq-venv/bin/activate
 jupyter notebook --generate-config --allow-root
 
 cat - >> /root/.jupyter/jupyter_notebook_config.py <<EOT
@@ -40,16 +41,16 @@ jupyter nbextension enable --py --sys-prefix widgetsnbextension
 ### jupyter nbextension install rise --py --sys-prefix
 ### jupyter nbextension enable rise --py --sys-prefix
 # Enable jupyterlab
-jupyter serverextension enable jupyterlab
+##### jupyter serverextension enable jupyterlab
 
 ### TODO manager is gone?  Need to test if any npm updates needed now that jupyterlab better supported on PYPI
 ### jupyter labextension install @jupyter-widgets/jupyterlab-manager@3.0.0 --no-build
 ### https://pypi.org/project/plotly/   pip install jupyterlab "ipywidgets>=7.5" 
-jupyter labextension install plotlywidget@4.14.3 --no-build
-jupyter labextension install jupyterlab-plotly@4.14.3 --no-build
+#jupyter labextension install plotlywidget@4.14.3 --no-build
+#jupyter labextension install jupyterlab-plotly@4.14.3 --no-build
 
-jupyter lab build --minimize=False
-rm -rf /usr/local/share/jupyter/lab/staging
+#### jupyter lab build --minimize=False
+### rm -rf /usr/local/share/jupyter/lab/staging
 
 mkdir -p $PYNQ_JUPYTER_NOTEBOOKS
 
