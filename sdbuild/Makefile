@@ -233,8 +233,11 @@ $$(IMAGE_$1) : $$(BASE_PATH_$1) $$(STAGE4_DEPENDS_$1) $$(BOOT_FILES_$1) $$(MODUL
 	cd $$(BUILD_ROOT_$1)/modules && tar -xf $$(MODULES_$1)
 	sudo cp -r --no-preserve=ownership $$(BUILD_ROOT_$1)/modules/* $$(STAGING_$1)
 	rm -rf $$(BUILD_ROOT_$1)/modules
+	sudo mount -o bind /dev $$(STAGING_$1)/dev
 	rpm2cpio $$(KERNEL_RPM_$1) | sudo chroot $$(STAGING_$1) cpio -id
 	sudo chroot $$(STAGING_$1) depmod -a $$(LINUX_VERSION)
+	sudo umount -l $$(STAGING_$1)/dev
+
 	$$(SCRIPT_DIR)/resize_umount.sh $$(IMAGE_$1) $$(STAGING_$1)
 
 
