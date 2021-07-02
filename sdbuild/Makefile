@@ -6,7 +6,7 @@ VERSION := 2.6.0
 
 KERNEL_VERSION := 2020.1
 LINUX_VERSION := 5.4.0-xilinx-v2020.1
-QEMU_VERSION := 4.0.0
+QEMU_VERSION := 5.2.0
 SCRIPT_DIR := $(CURDIR)/scripts
 SHELL := /bin/bash
 
@@ -324,8 +324,7 @@ $$(STAGE1_$1): $$(CONFIG_$1)/multistrap.config | $$(BUILD_ROOT) $$(CCACHEDIR)
 .PRECIOUS: $$(STAGE1_$1) $$(STAGE2_$2) $$(BASE_$1)
 
 qemu_check_$1:
-	# $$(QEMU_$1) -version | fgrep ${QEMU_VERSION}
-	# TODO Set the correct check once known if 4.0.0 is still usable
+	$$(QEMU_$1) -version | fgrep ${QEMU_VERSION}
 
 $$(DIST_$1): $$(BASE_PATH_$1) | $$(DIST_ROOT)
 	mkdir -p $$@
