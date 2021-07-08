@@ -39,14 +39,12 @@ export CC=/usr/lib/ccache/gcc
 export CXX=/usr/lib/ccache/g++
 
 
-# TODO hardening of resolv.conf for 20.04 images over QEMU 5.2.0/6.0.0 ... 
+# Hardening of resolv.conf for 20.04 images over QEMU 5.2.0
 hostresolvfile=/etc/resolv.conf
 targetresolvfile=$target/etc/resolv.conf
 if [[ -L "$targetresolvfile" ]]; then
-    echo "$targetresolvfile is a symlink - hardening"
     sudo mv $targetresolvfile ${targetresolvfile}.link
     sudo cp -L $hostresolvfile $targetresolvfile
-    sudo cat $targetresolvfile
 fi
 
 
@@ -70,3 +68,9 @@ do
   fi
 done
 
+
+# Target resolv.conf back to linkfile
+if [[ ! -L "$targetresolvfile" ]]; then
+    sudo rm $targetresolvfile
+    sudo mv ${targetresolvfile}.link $targetresolvfile
+fi

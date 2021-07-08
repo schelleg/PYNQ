@@ -4,11 +4,6 @@ set -x
 set -e
 
 
-# TODO ... distutils and pip clashing ...
-# ATTEMPT1 apt-get remove ... not working, would remove dist-util packages  apt-get remove -y python3-zmq
-# ATTEMPT2 trying PYTHONPATH below to force a venv of python3.8 packages that would/should get seen first... not pexpect
-# ATTEMPT3 remove 
-
 # Captured using pip3 freeze on image after packages installed with no versions
 cd /root
 cat > requirements.txt <<EOT
@@ -83,6 +78,7 @@ parso==0.8.2
 pexpect==4.8.0
 pickleshare==0.7.5
 Pillow==7.0.0
+plotly==5.1.0
 pluggy==0.13.0
 ply==3.11
 prometheus-client==0.10.1
@@ -112,6 +108,7 @@ QtPy==1.9.0
 requests==2.22.0
 requests-unixsocket==0.2.0
 retrying==1.3.3
+RISE==5.7.1
 scikit-image==0.16.2
 scipy==1.3.3
 SecretStorage==2.3.1
@@ -122,6 +119,7 @@ sniffio==1.2.0
 SQLAlchemy==1.3.12
 ssh-import-id==5.10
 sympy==1.5.1
+teancity=8.0.0
 terminado==0.10.0
 testpath==0.5.0
 tornado==6.1
@@ -139,11 +137,11 @@ widgetsnbextension==3.5.1
 zipp==1.0.0
 EOT
 
+export PYNQ_VENV=/usr/local/share/pynq-venv
 
+python3 -m venv --system-site-packages $PYNQ_VENV
+source $PYNQ_VENV/bin/activate
 
-python3 -m venv --system-site-packages pynq-venv
-source ./pynq-venv/bin/activate
-
-python3 -m pip install pip==21.1.2
+python3 -m pip install pip==21.1.3
 python3 -m pip install -r requirements.txt
 rm requirements.txt

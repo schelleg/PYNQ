@@ -1,6 +1,7 @@
 #!/bin/bash
 
 . /etc/environment
+. /usr/local/share/pynq-venv/bin/activate
 
 if [ -z "$PYNQ_PYTHON" ]; then
   PYNQ_PYTHON=python3
