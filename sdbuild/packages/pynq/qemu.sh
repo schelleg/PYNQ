@@ -11,11 +11,7 @@ export BOARD=${PYNQ_BOARD}
 cd /home/xilinx
 mkdir -p jupyter_notebooks
 
-source /root/pynq-venv/bin/activate
-
-echo "pynq/qemu.sh"
-echo `which python3`
-
+source /usr/local/share/pynq-venv/bin/activate
 
 cd pynq_git
 BOARD=${PYNQ_BOARD} PYNQ_JUPYTER_NOTEBOOKS=${PYNQ_JUPYTER_NOTEBOOKS} \
