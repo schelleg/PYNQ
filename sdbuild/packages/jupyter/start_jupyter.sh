@@ -6,7 +6,7 @@ set -a
 set +a
 for f in /etc/profile.d/*; do source $f; done
 
-source /root/pynq-venv/bin/activate
+source /usr/local/share/pynq-venv/bin/activate
 
 notebook_args=--no-browser
 notebook_version=$(jupyter notebook --version | grep -o '^[0-9]*')
