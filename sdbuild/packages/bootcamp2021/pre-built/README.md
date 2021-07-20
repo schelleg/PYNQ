@@ -1,0 +1,3 @@
+Once pynq peripherals goes public, pre-built can go away and we will git clone that repo in qemu.sh...
+
+for now, the pynq_peripherals master zip can be added into pre-built and used for building sdcard image
