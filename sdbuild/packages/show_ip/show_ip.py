@@ -17,7 +17,7 @@ def show_ip(ol, interface, ip_addr):
     if interface:
         msg = f"IP for {interface:<5} is:{' '*16}{ip_addr}"
     else:
-        f"Can't find interface with an IP"
+        msg = "Can't find interface with an IP"
     oled.write(msg)
     del oled
 
@@ -51,9 +51,15 @@ def timeout_handler(sig_num, stack_frame):
     """A simple handler for timeout signals"""
     raise Exception('Timeout!')
 
-    
-# Load base overlay
-ol = BaseOverlay("base.bit")
+#    
+# Begin the main show_ip script - assuming that
+# base name binding to BaseOverlay done in prepended
+# boot.py for the PYNQ-Z2
+#
+# if base not downloaded yet, uncomment next line and rerun
+#base = BaseOverlay("base.bit")
+#
+base.leds[1:4].off()
 timeout_secs = 5*60
 
 # Setup signal for button timeout
@@ -65,7 +71,7 @@ print(f"Timing out in {timeout_secs} seconds")
 
 # Try to wait for button press
 try:
-    ol.buttons[0].wait_for_value(1)
+    base.buttons[0].wait_for_value(1)
 except Exception:
     print("Timed out. Exiting...")
     exit(0)
@@ -76,4 +82,4 @@ signal.alarm(0)
 # Print IP
 print("Button pressed. Continuing...")
 interface, ip = get_first_ip(['wlan0', 'eth0'])
-show_ip(ol, interface, ip)
+show_ip(base, interface, ip)

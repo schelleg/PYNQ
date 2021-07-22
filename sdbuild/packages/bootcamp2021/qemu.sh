@@ -29,3 +29,16 @@ if [ ! -f /dev/xlnk ]; then
 else
     pynq get-notebooks pynq_peripherals -p .
 fi
+rm -rf /home/xilinx/jupyter_notebooks/*.dat
+
+# install extra requirements for apps/ notebooks
+apt update
+apt install -y flac
+apt install -y portaudio19-dev
+python3.6 -m pip install jupyterplot
+python3.6 -m pip install pyaudio
+python3.6 -m pip install SpeechRecognition
+python3.6 -m pip install gtts
+
+# Append to boot.py the bootcamp Wifi ssid/password
+cat /usr/local/bin/bootcamp_wifi.py >> /boot/boot.py
