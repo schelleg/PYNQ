@@ -5,7 +5,7 @@
 from pynq.lib import Wifi
 
 try:
-    Wifi().connect('svvsd-iot','PYNQ21')
+    Wifi().connect('svvsd-iot','PYNQ21', auto=True)
 except:
     print("unable to connect to St. Vrain wifi.")
 
