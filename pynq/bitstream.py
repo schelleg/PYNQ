@@ -35,6 +35,7 @@ import os
 import warnings
 from .devicetree import get_dtbo_path
 from .utils import _find_local_overlay_res, _ExtensionsManager
+from .utils import XsaParser
 
 OVERLAYS_GROUP = "pynq.overlays"
 
@@ -104,12 +105,19 @@ class Bitstream:
             Flag to indicate whether or not the bitstream is partial.
 
         """
+
+
         if not isinstance(bitfile_name, str):
             raise TypeError("Bitstream name has to be a string.")
         if device is None:
             from .pl_server.device import Device
             device = Device.active_device
         self.device = device
+
+        if bitfile_name.endswith(".xsa"):
+            xsa = XsaParser(bitfile_name)
+            bitfile_name = xsa.bitstreamPaths[0] 
+            xsa.load_bdc_metadata()
 
         bitfile_overlay_abs_lst = []
         if os.path.isabs(bitfile_name):

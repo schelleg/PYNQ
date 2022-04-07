@@ -30,6 +30,7 @@
 import os
 import re
 import abc
+import json
 from xml.etree import ElementTree
 from copy import deepcopy
 from pynq.ps import CPU_ARCH_IS_SUPPORTED, CPU_ARCH, ZYNQ_ARCH, ZU_ARCH
@@ -141,7 +142,7 @@ class _HWHABC(metaclass=abc.ABCMeta):
     family_irq = ""
     family_gpio = ""
 
-    def __init__(self, hwh_name=None, hwh_data=None):
+    def __init__(self, hwh_name=None, hwh_data=None, tmpdir=None):
         """Returns a map built from the supplied hwh file
 
         Parameters
@@ -173,6 +174,7 @@ class _HWHABC(metaclass=abc.ABCMeta):
         self.gpio_dict = {}
         self.clock_dict = {}
         self.mem_dict = {}
+        self.tmpdir = tmpdir
 
         self.instance2attr = {i.get('INSTANCE'): (
             i.get('FULLNAME').lstrip('/'),
@@ -198,6 +200,7 @@ class _HWHABC(metaclass=abc.ABCMeta):
                 self.intc_names.append(full_path)
 
             self.match_nets(mod, full_path)
+        self._add_bdc_ip_to_dict()
 
         self.match_ports()
         self.match_pins()
@@ -264,67 +267,144 @@ class _HWHABC(metaclass=abc.ABCMeta):
                                                  for j in pars}
         self.ip_dict[full_name]['type'] = vlnv
 
+    def _get_extern_bus_from_ref(self, busref, bdc_hwh):
+        """
+        From a parsed HWH file get the external interface name
+        for a given external bus ref.
+        """
+        for ext_bus in bdc_hwh.iter('BUSINTERFACE'):
+            if busref == ext_bus.get('BUSNAME'):
+                return ext_bus.get('NAME')
+        return None
+
+
+    def _add_bdc_ip_to_dict(self):
+        """
+            Adds IP from all the block design containers into the ip_dict
+
+            Parameters
+            -----------
+            mod : Element
+                The modules that we are adding to the design
+        """
+        for i in self.root.iter('MODULE'):
+            if i.get('BDTYPE') == "BLOCK_CONTAINER":
+                bdc_name = i.get('BD') 
+                bdc_json_meta_filename = self.tmpdir +"/" + bdc_name + "_pynq_bdc_metadata.json"
+                bdc_json_meta_file = open(bdc_json_meta_filename, "r")
+                bdc_json_meta = json.load(bdc_json_meta_file)
+
+                # Need to also open the BDC HWH file here
+                bdc_hwh_filename = self.tmpdir + "/" + bdc_name + ".hwh"
+                bdc_tree = ElementTree.parse(bdc_hwh_filename)
+                bdc_root = bdc_tree.getroot()
+
+                for i in bdc_root.iter('MODULE'):
+                    for b_itf in i.iter('BUSINTERFACE'):
+                        extern_bus_ref = b_itf.get('BUSNAME')
+                        external_intf_name = self._get_extern_bus_from_ref(extern_bus_ref, bdc_root) 
+                        internal_intf_name = b_itf.get('NAME')
+
+                        full_name = bdc_name + "/" + i.get('INSTANCE') + "/" + external_intf_name 
+                        self.ip_dict[full_name] = {} 
+                        self.ip_dict[full_name]['fullpath'] = full_name 
+                        self.ip_dict[full_name]['type'] = i.get('VLNV') 
+                        self.ip_dict[full_name]['bdtype'] = i.get('BDTYPE') 
+                        self.ip_dict[full_name]['state'] = None 
+                
+                        base_addr = 0
+                        high_addr = 0
+                        for p in i.iter('PARAMETER'):
+                            if p.get('NAME') == "C_BASEADDR":
+                                base_addr = int(p.get('VALUE'), 16)
+                            if p.get('NAME') == "C_HIGHADDR":
+                                high_addr = int(p.get('VALUE'), 16)
+
+                        addr_range = high_addr - base_addr + 1
+                        self.ip_dict[full_name]['addr_range'] = addr_range
+                        self.ip_dict[full_name]['phys_addr'] = base_addr
+
+                        self.ip_dict[full_name]['mem_id'] = external_intf_name 
+                        self.ip_dict[full_name]['memtype'] = None
+                        self.ip_dict[full_name]['gpio'] = { }
+                        self.ip_dict[full_name]['interrupts'] = { }
+                        self.ip_dict[full_name]['parameters'] = { }
+
+                        #regmaps = bdc_json_meta["ip"]["/"+i.get('INSTANCE')]["interfaces"][external_intf_name]["regmap"]
+                        regmaps = bdc_json_meta["ip"]["/"+i.get('INSTANCE')]["interfaces"][internal_intf_name]["regmap"]
+                        for regmap in regmaps:
+                            self.ip_dict[full_name]['registers'] = regmaps[regmap]["registers"] 
+
+                        self.ip_dict[full_name]["parameters"] = bdc_json_meta["ip"]["/"+i.get('INSTANCE')]["parameters"]
+
+                        
+                bdc_json_meta_file.close()
+
     def _parse_ip_dict(self, mod, mem_intf_id):
         to_pop = set()
+
         for i in mod.iter("MEMRANGE"):
             if i.get('INSTANCE') in self.instance2attr:
                 full_name, vlnv, pars, regs, bdtype = self.instance2attr[
                     i.get('INSTANCE')]
-                intf_id = i.get(mem_intf_id)
-                if full_name in self.ip_dict and \
-                        self.ip_dict[full_name]['mem_id'] and intf_id:
-                    rename = full_name + '/' + \
-                        self.ip_dict[full_name]['mem_id']
-                    self.ip_dict[rename] = deepcopy(self.ip_dict[full_name])
-                    self.ip_dict[rename]['fullpath'] = rename
-                    to_pop.add(full_name)
-                    full_name += '/' + intf_id
-                elif vlnv.split(':')[:2] == ['xilinx.com', 'module_ref'] and \
-                        bdtype:
-                    full_name += '/' + intf_id
 
-                self.ip_dict[full_name] = {}
-                self.ip_dict[full_name]['fullpath'] = full_name
-                self.ip_dict[full_name]['type'] = vlnv
-                self.ip_dict[full_name]['bdtype'] = bdtype
-                self.ip_dict[full_name]['state'] = None
-                high_addr = int(i.get('HIGHVALUE'), 16)
-                base_addr = int(i.get('BASEVALUE'), 16)
-                addr_range = high_addr - base_addr + 1
-                self.ip_dict[full_name]['addr_range'] = addr_range
-                self.ip_dict[full_name]['phys_addr'] = base_addr
-                self.ip_dict[full_name]['mem_id'] = intf_id
-                self.ip_dict[full_name]['memtype'] = i.get('MEMTYPE', None)
-                self.ip_dict[full_name]['gpio'] = {}
-                self.ip_dict[full_name]['interrupts'] = {}
-                self.ip_dict[full_name]['parameters'] = {j.get('NAME'):
-                                                         j.get('VALUE')
-                                                         for j in pars}
-                self.ip_dict[full_name]['registers'] = {j.get('NAME'): {
-                        'address_offset': string2int(j.find(
-                            './PROPERTY/[@NAME="ADDRESS_OFFSET"]').get(
-                            'VALUE')),
-                        'size': string2int(j.find(
-                            './PROPERTY/[@NAME="SIZE"]').get(
-                            'VALUE')),
-                        'access': j.find('./PROPERTY/[@NAME="ACCESS"]').get(
-                                'VALUE'),
-                        'description': j.find(
-                            './PROPERTY/[@NAME="DESCRIPTION"]').get('VALUE'),
-                        'fields': {k.get('NAME'): {
-                            'bit_offset': string2int(k.find(
-                                './PROPERTY/[@NAME="BIT_OFFSET"]').get(
+                if bdtype != "BLOCK_CONTAINER":
+                    intf_id = i.get(mem_intf_id)
+                    if full_name in self.ip_dict and \
+                            self.ip_dict[full_name]['mem_id'] and intf_id:
+                        rename = full_name + '/' + \
+                            self.ip_dict[full_name]['mem_id']
+                        self.ip_dict[rename] = deepcopy(self.ip_dict[full_name])
+                        self.ip_dict[rename]['fullpath'] = rename
+                        to_pop.add(full_name)
+                        full_name += '/' + intf_id
+                    elif vlnv.split(':')[:2] == ['xilinx.com', 'module_ref'] and \
+                            bdtype:
+                        full_name += '/' + intf_id
+
+                    self.ip_dict[full_name] = {}
+                    self.ip_dict[full_name]['fullpath'] = full_name
+                    self.ip_dict[full_name]['type'] = vlnv
+                    self.ip_dict[full_name]['bdtype'] = bdtype
+                    self.ip_dict[full_name]['state'] = None
+                    high_addr = int(i.get('HIGHVALUE'), 16)
+                    base_addr = int(i.get('BASEVALUE'), 16)
+                    addr_range = high_addr - base_addr + 1
+                    self.ip_dict[full_name]['addr_range'] = addr_range
+                    self.ip_dict[full_name]['phys_addr'] = base_addr
+                    self.ip_dict[full_name]['mem_id'] = intf_id
+                    self.ip_dict[full_name]['memtype'] = i.get('MEMTYPE', None)
+                    self.ip_dict[full_name]['gpio'] = {}
+                    self.ip_dict[full_name]['interrupts'] = {}
+                    self.ip_dict[full_name]['parameters'] = {j.get('NAME'):
+                                                             j.get('VALUE')
+                                                             for j in pars}
+                    self.ip_dict[full_name]['registers'] = {j.get('NAME'): {
+                            'address_offset': string2int(j.find(
+                                './PROPERTY/[@NAME="ADDRESS_OFFSET"]').get(
                                 'VALUE')),
-                            'bit_width': string2int(k.find(
-                                './PROPERTY/[@NAME="BIT_WIDTH"]').get(
+                            'size': string2int(j.find(
+                                './PROPERTY/[@NAME="SIZE"]').get(
                                 'VALUE')),
-                            'description': j.find(
-                                './PROPERTY/[@NAME="DESCRIPTION"]').get(
+                            'access': j.find('./PROPERTY/[@NAME="ACCESS"]').get(
                                     'VALUE'),
-                            'access': k.find(
-                                './PROPERTY/[@NAME="ACCESS"]').get('VALUE')}
-                            for k in j.findall('./FIELDS/FIELD/[@NAME]')}}
-                    for j in regs}
+                            'description': j.find(
+                                './PROPERTY/[@NAME="DESCRIPTION"]').get('VALUE'),
+                            'fields': {k.get('NAME'): {
+                                'bit_offset': string2int(k.find(
+                                    './PROPERTY/[@NAME="BIT_OFFSET"]').get(
+                                    'VALUE')),
+                                'bit_width': string2int(k.find(
+                                    './PROPERTY/[@NAME="BIT_WIDTH"]').get(
+                                    'VALUE')),
+                                'description': j.find(
+                                    './PROPERTY/[@NAME="DESCRIPTION"]').get(
+                                        'VALUE'),
+                                'access': k.find(
+                                    './PROPERTY/[@NAME="ACCESS"]').get('VALUE')}
+                                for k in j.findall('./FIELDS/FIELD/[@NAME]')}}
+                        for j in regs}
+
         for i in to_pop:
             self.ip_dict.pop(i)
 
