@@ -403,7 +403,6 @@ class _HWHABC(metaclass=abc.ABCMeta):
             if v.get('memtype', None) == 'MEMORY':
                 self.mem_dict[k] = v
                 v['used'] = 1
-                del self.ip_dict[k]
 
     def _add_interrupt_pins(self, net, parent, offset, raw_map=None):
         net_pins = self.nets[net] if net else set()
