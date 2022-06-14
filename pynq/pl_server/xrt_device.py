@@ -1,4 +1,4 @@
-#   Copyright (c) 2019-2021, Xilinx, Inc.
+#   Copyright (c) 2019-2022, Xilinx, Inc.
 #   All rights reserved.
 #
 #   Redistribution and use in source and binary forms, with or without
@@ -37,13 +37,14 @@ import warnings
 import weakref
 import numpy as np
 from pynq.buffer import PynqBuffer
+from pynq.ps import CPU_ARCH_IS_x86
 from .device import Device
 
 from pynq._3rdparty import xrt
 from pynq._3rdparty import ert
 
 __author__ = "Peter Ogden"
-__copyright__ = "Copyright 2019-2021, Xilinx"
+__copyright__ = "Copyright 2019-2022, Xilinx"
 __email__ = "pynq_support@xilinx.com"
 
 
@@ -78,24 +79,32 @@ _xrt_errors = {
 }
 
 
-def _get_xrt_version():
-    import subprocess
+def _get_xrt_version_embedded(path='/sys/module/zocl'):
+    try:
+        with open(path + '/version', 'r') as f:
+            details = f.readline().replace('\n','')
+        return tuple(
+            int(s) for s in details.split('.'))
+    except Exception:
+        warnings.warn('Unable to determine XRT version')
+        return (0, 0, 0)
+
+
+def _get_xrt_version_x86():
     import json
     try:
-        output = subprocess.run(['xbutil', 'dump'], stdout=subprocess.PIPE,
-                                universal_newlines=True)
-        if output.returncode != 0:
-            warnings.warn(
-                    'xbutil failed to run - unable to determine XRT version')
-        details = json.loads(output.stdout)
+        with open(os.environ['XILINX_XRT'] + '/version.json', 'r') as f:
+            details = json.loads(f.read())
         return tuple(
-            int(s) for s in details['runtime']['build']['version'].split('.'))
+            int(s) for s in details['BUILD_VERSION'].split('.'))
     except Exception:
+        warnings.warn('Unable to determine XRT version')
         return (0, 0, 0)
 
 
 if xrt.XRT_SUPPORTED:
-    _xrt_version = _get_xrt_version()
+    _xrt_version = _get_xrt_version_x86() if CPU_ARCH_IS_x86 \
+        else _get_xrt_version_embedded()
 else:
     _xrt_version = (0, 0, 0)
 
@@ -314,7 +323,7 @@ class XrtStream:
 class XrtDevice(Device):
     @classmethod
     def _probe_(cls):
-        if not xrt.XRT_SUPPORTED:
+        if not xrt.XRT_SUPPORTED or not CPU_ARCH_IS_x86:
             return []
         num = xrt.xclProbe()
         devices = [XrtDevice(i) for i in range(num)]
