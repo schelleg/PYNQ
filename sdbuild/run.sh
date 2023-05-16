@@ -36,8 +36,8 @@ popd
 #echo 'CONFIG_SUBSYSTEM_DTB_OVERLAY=y' >> $PROJPATH/project-spec/configs/config
 #echo 'CONFIG_SUBSYSTEM_FPGA_MANAGER=y' >> $PROJPATH/project-spec/configs/config
 
-#echo "CONFIG_python3-pynq"    >> $PROJPATH/project-spec/meta-user/conf/user-rootfsconfig
-#echo "CONFIG_python3-pynq=y"  >> $PROJPATH/project-spec/configs/rootfs_config
+echo "CONFIG_python3-pynq"    >> $PROJPATH/project-spec/meta-user/conf/user-rootfsconfig
+echo "CONFIG_python3-pynq=y"  >> $PROJPATH/project-spec/configs/rootfs_config
 
 echo "CONFIG_python3-pip"     >> $PROJPATH/project-spec/meta-user/conf/user-rootfsconfig
 echo "CONFIG_python3-pip=y"   >> $PROJPATH/project-spec/configs/rootfs_config

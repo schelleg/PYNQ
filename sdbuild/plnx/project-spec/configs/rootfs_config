@@ -4107,6 +4107,7 @@ CONFIG_gstreamer-vcu-examples=y
 # CONFIG_gstreamer-vcu-notebooks is not set
 # CONFIG_peekpoke is not set
 CONFIG_python3-pip=y
+CONFIG_python3-pynq=y
 
 #
 # PetaLinux RootFS Settings
