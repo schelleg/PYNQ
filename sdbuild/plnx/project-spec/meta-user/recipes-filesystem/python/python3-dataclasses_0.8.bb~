@@ -1,0 +1,11 @@
+SUMMARY = "A backport of the dataclasses module for Python 3.6"
+    
+HOMEPAGE = "https://github.com/ericvsmith/dataclasses"
+LICENSE = "Apache-2.0"
+LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=8cc789b082b3d97e1ccc5261f8594d3f"
+
+SRC_URI[md5sum] = "96ed0d3e8b3ed95b4b2acd8c856a87a6"
+
+PYPI_PACKAGE = "dataclasses"   
+
+inherit pypi setuptools3

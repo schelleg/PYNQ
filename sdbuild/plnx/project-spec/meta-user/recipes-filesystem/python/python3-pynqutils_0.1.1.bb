@@ -1,0 +1,11 @@
+SUMMARY = "Utilities for PYNQ"
+    
+HOMEPAGE = "https://github.com/Xilinx/PYNQ-Utils"
+LICENSE = "BSD-3-Clause"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=8cc789b082b3d97e1ccc5261f8594d3f"
+
+# SRC_URI[md5sum] = "96ed0d3e8b3ed95b4b2acd8c856a87a6"
+
+PYPI_PACKAGE = "pynqutils"   
+
+inherit pypi setuptools3
