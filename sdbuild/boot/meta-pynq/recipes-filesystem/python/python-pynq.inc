@@ -21,6 +21,11 @@ ${PYTHON_PN}-threading \
 ${PYTHON_PN}-xml \
 ${PYTHON_PN}-distutils \
 ${PYTHON_PN}-modules \
+python3-jupyter \
+python3-pydantic \
+python3-dataclasses \
+python3-pynqmetadata \
+python3-pynqutils \
 lmsensors-libsensors \
 libdrm \
 "
