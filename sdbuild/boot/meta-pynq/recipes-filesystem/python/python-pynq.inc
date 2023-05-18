@@ -37,12 +37,21 @@ PYNQ_ARCH_aarch64 = "aarch64"
 CMA_ARCH_arm = "32"
 CMA_ARCH_aarch64 = "64"
 
-SRC_URI = "gitsm://${THISDIR}/../../../../../;usehead=1;protocol=file"
-SRCREV = "${AUTOREV}"
+# Uncomment for GitHub, commithash use ... srcrev and sha would need updated if repo contents change
+SRCREV = "de6b6fc3a803945d59f8f06523addfe0d9b60a1c"
+SRC_URI = "gitsm://www.github.com/Xilinx/PYNQ;protocol=http;branch=master"
+SRC_URI[sha256sum] = "9c8833212ad91bbb8e95fb0bc76ee4f8deefff0780d02ea90845ea73afd54451"
+S = "${WORKDIR}/git"
 
+# Uncomment for local repo use .. the relative paths are set based on using meta-pynq as a layer
+# SRC_URI = "gitsm://${THISDIR}/../../../../../;usehead=1;protocol=file"
+# SRCREV = "${AUTOREV}"
+# S = "${WORKDIR}/git"
+
+# Uncomment for PYPI use - does not work right now, since we don't ship libcma build scripts
+# PYPI_PACKAGE = "pynq"   
 
 FILESEXTRAPATHS:prepend := "${THISDIR}:"
-S = "${WORKDIR}/git"
 INSANE_SKIP_${PN} = "staticdev"
 BBCLASSEXTEND = "native nativesdk"
 
